@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "876303562526",
+    "firebase_url": "https://test2-3dd5d-default-rtdb.firebaseio.com",
+    "project_id": "test2-3dd5d",
+    "storage_bucket": "test2-3dd5d.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876303562526:android:aba3ec4443f42bbc76bb0f",
+        "android_client_info": {
+          "package_name": "com.example.restaurantlogging"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQBmlDBjWkEb0r4NMvqJIWwASTyE2tgTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876303562526:android:8ad8c22c4ebed8f176bb0f",
+        "android_client_info": {
+          "package_name": "com.example.test2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQBmlDBjWkEb0r4NMvqJIWwASTyE2tgTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:876303562526:android:c6a9b0624d14fed376bb0f",
+        "android_client_info": {
+          "package_name": "com.example.test20240506"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCQBmlDBjWkEb0r4NMvqJIWwASTyE2tgTw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

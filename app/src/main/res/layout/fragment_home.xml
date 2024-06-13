@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.home.HomeFragment">
+
+    <TextView
+        android:id="@+id/Home"
+        android:layout_width="228dp"
+        android:layout_height="70dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="28dp"
+        android:textAlignment="center"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_begin="199dp" />
+
+    <Button
+        android:id="@+id/post"
+        android:layout_width="269dp"
+        android:layout_height="96dp"
+        android:layout_marginTop="300dp"
+        android:text="發布貼文"
+        android:textAlignment="textEnd"
+        android:textSize="34sp"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="-72dp" />
+
+    <Button
+        android:id="@+id/black_list"
+        android:layout_width="269dp"
+        android:layout_height="102dp"
+        android:layout_marginTop="1dp"
+        android:text="列入黑名單"
+        android:textAlignment="textEnd"
+        android:textSize="34sp"
+        app:layout_constraintTop_toBottomOf="@+id/post"
+        tools:layout_editor_absoluteX="-72dp" />
+
+    <Button
+        android:id="@+id/analyze"
+        android:layout_width="268dp"
+        android:layout_height="109dp"
+        android:layout_marginTop="1dp"
+        android:text="數據分析"
+        android:textAlignment="textEnd"
+        android:textSize="34sp"
+        app:layout_constraintTop_toBottomOf="@+id/black_list"
+        tools:layout_editor_absoluteX="-71dp" />
+
+    <Button
+        android:id="@+id/npcheck"
+        android:layout_width="100dp"
+        android:layout_height="63dp"
+        android:layout_marginTop="600dp"
+        android:layout_marginEnd="110dp"
+        android:text="發布"
+        android:visibility="invisible"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/new_post"
+        android:layout_width="1078dp"
+        android:layout_height="721dp"
+        android:layout_marginStart="232dp"
+        android:layout_marginBottom="4dp"
+        android:textAlignment="center"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <EditText
+        android:id="@+id/post_word"
+        android:layout_width="918dp"
+        android:layout_height="495dp"
+        android:layout_marginStart="250dp"
+        android:layout_marginBottom="100dp"
+        android:ems="10"
+        android:hint="請輸入發布內容"
+        android:inputType="text"
+        android:textAlignment="inherit"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

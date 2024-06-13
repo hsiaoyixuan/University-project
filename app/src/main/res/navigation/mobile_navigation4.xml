@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mobile_navigation4"
+    app:startDestination="@+id/nav_order">
+
+    <fragment
+        android:id="@+id/nav_home"
+        android:name="com.example.restaurantlogging.ui.home.HomeFragment"
+        android:label="@string/menu_home"
+        tools:layout="@layout/fragment_home" />
+    <fragment
+        android:id="@+id/nav_search"
+        android:name="com.example.restaurantlogging.ui.search.SearchFragment"
+        android:label="@string/menu_search"
+        tools:layout="@layout/fragment_search" />
+    <fragment
+        android:id="@+id/nav_excel"
+        android:name="com.example.restaurantlogging.ui.excel.ExcelFragment"
+        android:label="@string/menu_excel"
+        tools:layout="@layout/fragment_excel" />
+    <fragment
+        android:id="@+id/nav_menu"
+        android:name="com.example.restaurantlogging.ui.menu.MenuFragment"
+        android:label="@string/menu_menu"
+        tools:layout="@layout/fragment_menu" />
+    <fragment
+        android:id="@+id/nav_service"
+        android:name="com.example.restaurantlogging.ui.service.ServiceFragment"
+        android:label="@string/menu_service"
+        tools:layout="@layout/fragment_service" />
+    <fragment
+        android:id="@+id/nav_order"
+        android:name="com.example.restaurantlogging.ui.order.OrderFragment"
+        android:label="@string/menu_order"
+        tools:layout="@layout/fragment_order" />
+    <fragment
+        android:id="@+id/nav_logout"
+        android:name="com.example.restaurantlogging.ui.logout.LogoutFragment"
+        android:label="@string/menu_logout"
+        tools:layout="@layout/fragment_logout" />
+
+
+</navigation>
