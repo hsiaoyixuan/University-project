@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <RadioGroup
+        android:id="@+id/radio_group_reject_reason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <RadioButton
+            android:id="@+id/radio_closed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="歇業時間" />
+
+        <RadioButton
+            android:id="@+id/radio_insufficient_material"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="材料不足" />
+    </RadioGroup>
+
+    <EditText
+        android:id="@+id/edit_text_other_reason"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="其他原因" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="確定" />
+
+        <Button
+            android:id="@+id/button_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="取消" />
+    </LinearLayout>
+
+</LinearLayout>

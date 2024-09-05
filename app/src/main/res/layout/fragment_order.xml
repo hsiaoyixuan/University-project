@@ -1,17 +1,42 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="8dp">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="755dp"
-        android:layout_height="263dp"
-        android:layout_marginEnd="296dp"
-        android:layout_marginBottom="200dp"
-        android:text="TextView"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="60dp"
+        android:layout_marginBottom="16dp"
+        android:gravity="start"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/button_show_pending_orders"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="未接受訂單" />
+
+        <Button
+            android:id="@+id/button_show_accepted_orders"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="接受訂單" />
+
+        <Button
+            android:id="@+id/button_show_delayed_orders"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30分鐘後訂單" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view_orders"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="8dp" />
+
+</LinearLayout>

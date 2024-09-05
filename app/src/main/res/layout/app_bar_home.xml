@@ -5,6 +5,7 @@
     android:id="@+id/coordinatorLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/暖白"
     tools:context=".home">
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton

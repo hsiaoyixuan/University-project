@@ -2,4 +2,16 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="gray">#BEBEBE</color>
+    <color name="yellowup">#F3A952</color>
+    <color name="yellow">#FADFBC</color>
+    <color name="yellowback">#33F3A952</color>
+    <color name="Babyblue">#BBDEFB</color>
+    <color name="pending_orders_color">#F1C7D3</color>
+    <color name="accepted_orders_color">#B8D8E5</color>
+    <color name="delayed_orders_color">#D4E3DD</color>
+    <color name="崎紅">#66363C</color>
+    <color name="沉紅">#795A5F</color>
+    <color name="暖白">#F2ebd9</color>
+
 </resources>

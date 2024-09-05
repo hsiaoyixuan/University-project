@@ -12,14 +12,14 @@
     <string name="title_activity_home">home</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_slideshow">Slideshow</string>
-    <string name="menu_home">會員中心</string>
-    <string name="menu_search">探索</string>
+    <string name="menu_historicalorders">歷史訂單</string>
     <string name="menu_excel">報表</string>
     <string name="menu_menu">菜單</string>
     <string name="menu_service">客服</string>
     <string name="menu_order">訂單</string>
     <string name="menu_logout">登出</string>
     <string name="title_activity_hometown">hometown</string>
+    <string name="error_no_order_data">找不到訂單數據</string>
 
 
 </resources>

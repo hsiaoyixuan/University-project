@@ -1,30 +1,86 @@
-<?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:paddingTop="65dp">
+
+    <!-- 日期显示 TextView -->
+    <TextView
+        android:id="@+id/date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:text="2024/08/10 星期六"
+        android:textSize="20sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_select_date"/>
+
+    <!-- 日期选择按钮，显示在 date TextView 的后面 -->
+    <Button
+        android:id="@+id/btn_select_date"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:text="選擇日期"
+        app:layout_constraintStart_toEndOf="@id/date"
+        app:layout_constraintTop_toTopOf="@id/date"/>
+
+    <!-- 餐馆名称显示 TextView -->
+
+    <!-- 表格使用 ScrollView 包裹 -->
+    <TextView
+        android:id="@+id/rs_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
+        android:layout_marginTop="8dp"
+        android:text="餐馆名称示例"
+        android:textSize="24sp"
+        app:layout_constraintTop_toBottomOf="@id/date"
+        tools:layout_editor_absoluteX="32dp" />
+
+    <!-- 用于显示结算总金额的 TextView，显示在右下角 -->
+    <ScrollView
+        android:layout_width="1284dp"
+        android:layout_height="478dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.06"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/rs_name">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 表格内容 -->
+            <TableLayout
+                android:id="@+id/tableLayout"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="16dp"
+                android:stretchColumns="1" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
     <TextView
-        android:id="@+id/excel"
-        android:layout_width="960dp"
-        android:layout_height="599dp"
+        android:id="@+id/totalAmount"
+        android:layout_width="199dp"
+        android:layout_height="47dp"
         android:layout_marginTop="4dp"
-        android:text="TextView"
-        android:textSize="60sp"
+        android:layout_marginEnd="152dp"
+        android:text="當日總金額:"
+        android:textColor="#FF0000"
+        android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.209"
-        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <Button
-        android:id="@+id/excel_check"
-        android:layout_width="140dp"
-        android:layout_height="91dp"
-        android:layout_marginEnd="44dp"
-        android:layout_marginBottom="272dp"
-        android:text="報表產出"
-        android:textSize="20sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -3,5 +3,7 @@
     <style name="Base.Theme.RestaurantLogging" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your dark theme here. -->
         <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/Babyblue</item>
     </style>
 </resources>

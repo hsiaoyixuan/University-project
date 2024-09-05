@@ -3,6 +3,10 @@
     <style name="Base.Theme.RestaurantLogging" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">@color/崎紅</item>
+        <item name="colorOnBackground">@color/暖白</item>
+        <item name="colorOnPrimary">@color/暖白</item><!--按鈕字體顏色-->
+
     </style>
 
     <style name="Theme.RestaurantLogging" parent="Base.Theme.RestaurantLogging" />

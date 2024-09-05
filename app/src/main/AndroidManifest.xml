@@ -2,6 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <!--通知要用-->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+
+
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -12,34 +19,19 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.RestaurantLogging"
         tools:targetApi="31">
+
         <activity
-            android:name=".ui.home.hometown"
-            android:exported="false"
-            android:label="@string/title_activity_hometown"
-            android:theme="@style/Theme.RestaurantLogging.NoActionBar" />
+            android:name=".ui.order.OrderDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ui.menu.EditMenuItemActivity"
+            android:exported="false" />
         <activity
             android:name=".home"
             android:exported="false"
             android:label="@string/title_activity_home"
             android:theme="@style/Theme.RestaurantLogging.NoActionBar" />
-        <activity
-            android:name=".Main2Activity"
-            android:exported="false"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/Theme.RestaurantLogging.NoActionBar" />
-        <activity
-            android:name=".MainActivity2"
-            android:exported="false"
-            android:label="@string/title_activity_main2"
-            android:theme="@style/Theme.RestaurantLogging.NoActionBar" />
-        <activity
-            android:name=".rhome1"
-            android:exported="false"
-            android:label="@string/title_activity_rhome1"
-            android:theme="@style/Theme.RestaurantLogging.NoActionBar" />
-        <activity
-            android:name=".rhome"
-            android:exported="false" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -49,6 +41,8 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+
     </application>
 
 </manifest>
