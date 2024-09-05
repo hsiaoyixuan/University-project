@@ -54,7 +54,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
             String orderNumber = (String) order.get("orderNumber"); // 獲取訂單號碼
             if (orderNumber != null) {
-                holder.textViewOrderNum.setText("#"+orderNumber); // 顯示訂單編號
+                holder.textViewOrderNum.setText("#" + orderNumber); // 顯示訂單編號
             }
 
             Long differenceInMinutes = (Long) order.get("differenceInMinutes");
@@ -121,8 +121,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         }
     }
 
-
-
     // 判断订单是否符合当前显示类型
     private boolean shouldDisplayOrder(Map<String, Object> order) {
         String status = (String) order.get("接單狀況");
@@ -133,9 +131,9 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         if ("accepted".equals(filterType)) {
             return "接受訂單".equals(status);
         } else if ("delayed".equals(filterType)) {
-            return minutes >= 30 && !"接受訂單".equals(status);
+            return minutes >= 30 && !"接受訂單".equals(status) && !"完成訂單".equals(status) && !"拒絕訂單".equals(status);
         } else if ("pending".equals(filterType)) {
-            return minutes < 30 && !"接受訂單".equals(status);
+            return minutes < 30 && !"接受訂單".equals(status) && !"完成訂單".equals(status) && !"拒絕訂單".equals(status);
         }
         return false;
     }
@@ -164,7 +162,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             textViewOrderItem = itemView.findViewById(R.id.text_view_order_item);
             textViewOrderDate = itemView.findViewById(R.id.text_view_order_date);
             textViewOrderTime = itemView.findViewById(R.id.text_view_order_time);
-            textViewOrderNum=itemView.findViewById(R.id.order_num);
+            textViewOrderNum = itemView.findViewById(R.id.order_num);
             buttonAccept = itemView.findViewById(R.id.button_accept);
             buttonReject = itemView.findViewById(R.id.button_reject);
         }
@@ -175,4 +173,3 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         void onRejectOrder(Map<String, Object> order, String reason);
     }
 }
-

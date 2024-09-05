@@ -73,21 +73,21 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         binding.buttonShowPendingOrders.setOnClickListener(v -> {
             filterType = "pending"; // 設置篩選類型為“未接受”
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(R.color.沉紅); // 更新按鈕顏色
+            updateButtonColors(); // 更新按鈕顏色
             recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
         });
 
         binding.buttonShowAcceptedOrders.setOnClickListener(v -> {
             filterType = "accepted"; // 設置篩選類型為“已接受”
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(R.color.沉紅); // 更新按鈕顏色
+            updateButtonColors(); // 更新按鈕顏色
             recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
         });
 
         binding.buttonShowDelayedOrders.setOnClickListener(v -> {
             filterType = "delayed"; // 設置篩選類型為“延遲”
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(R.color.沉紅); // 更新按鈕顏色
+            updateButtonColors(); // 更新按鈕顏色
             recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
         });
 
@@ -110,7 +110,7 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
     public void onAcceptOrder(Map<String, Object> order) {
         order.put("接單狀況", "接受訂單"); // 更新本地狀態
         ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("接受訂單"); // 更新Firebase狀態
-        orderAdapter.notifyDataSetChanged(); // 通知適配器數據已更改
+        fetchUserOrders(); // 重新加載數據，更新列表
     }
 
     // 拒絕訂單的操作
@@ -118,7 +118,7 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
     public void onRejectOrder(Map<String, Object> order, String reason) {
         ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("拒絕訂單"); // 更新Firebase狀態
         ordersRef.child((String) order.get("orderId")).child("拒絕原因").setValue(reason); // 保存拒絕原因
-        orderAdapter.notifyDataSetChanged(); // 通知適配器數據已更改
+        fetchUserOrders(); // 重新加載數據，更新列表
         Toast.makeText(getActivity(), "訂單已拒絕: " + reason, Toast.LENGTH_SHORT).show(); // 顯示拒絕通知
     }
 
@@ -132,13 +132,18 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Map<String, Object> order = (Map<String, Object>) snapshot.getValue();
                     if (order != null) {
+                        String status = (String) order.get("接單狀況");
+                        if ("完成訂單".equals(status) || "拒絕訂單".equals(status)) {
+                            continue; // 跳過已完成或已拒絕的訂單
+                        }
+
                         Long timestamp = (Long) order.get("uploadTimestamp");
                         if (timestamp != null) {
                             String readableDate = convertTimestampToReadableDate(timestamp); // 將時間戳轉換為可讀的日期時間格式
                             order.put("readableDate", readableDate);
                         }
                         Long timestamp1 = (Long) order.get("timestamp");
-                        if (timestamp != null) {
+                        if (timestamp1 != null) {
                             String readableDate = convertTimestampToReadableDate(timestamp1); // 將時間戳轉換為可讀的日期時間格式
                             order.put("readableDate1", readableDate);
                         }
@@ -178,7 +183,7 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
     }
 
     // 更新按鈕背景顏色和RecyclerView背景顏色的方法
-    private void updateButtonColors(int color) {
+    private void updateButtonColors() {
         binding.buttonShowPendingOrders.setBackgroundColor(getResources().getColor(R.color.崎紅));
         binding.buttonShowPendingOrders.setTextColor(getResources().getColor(R.color.暖白));
         binding.buttonShowAcceptedOrders.setBackgroundColor(getResources().getColor(R.color.崎紅));
@@ -201,8 +206,6 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
                 binding.buttonShowDelayedOrders.setTextColor(getResources().getColor(R.color.崎紅));
                 break;
         }
-
-        //binding.recyclerViewOrders.setBackgroundColor(getResources().getColor(color));
     }
 
     // 檢查訂單狀態是否有變更

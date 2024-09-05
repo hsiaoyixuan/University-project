@@ -20,45 +20,57 @@ public class HistoricalOrdersViewModel extends ViewModel {
     private final MutableLiveData<Map<String, String>> mCompletedOrdersList;
     // 用於存儲拒絕訂單的 LiveData 列表
     private final MutableLiveData<Map<String, String>> mRejectedOrdersList;
+    // 用於存儲詳細訂單資訊
+    private final Map<String, String> completedOrdersDetails;
+    private final Map<String, String> rejectedOrdersDetails;
 
     public HistoricalOrdersViewModel() {
         mCompletedOrdersList = new MutableLiveData<>();
         mRejectedOrdersList = new MutableLiveData<>();
+        completedOrdersDetails = new HashMap<>();
+        rejectedOrdersDetails = new HashMap<>();
         fetchOrdersFromFirebase();  // 從 Firebase 獲取訂單數據
     }
 
     private void fetchOrdersFromFirebase() {
         // 監聽 Firebase 資料庫中 orders 節點的變化
-        FirebaseDatabase.getInstance().getReference("orders").addValueEventListener(new ValueEventListener() {
+        FirebaseDatabase.getInstance().getReference("Orders").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 Map<String, String> completedOrders = new HashMap<>();
                 Map<String, String> rejectedOrders = new HashMap<>();
                 for (DataSnapshot orderSnapshot : dataSnapshot.getChildren()) {
-                    String name = orderSnapshot.child("name").getValue(String.class);
+                    String name = orderSnapshot.child("名字").getValue(String.class);
                     Long timestamp = orderSnapshot.child("timestamp").getValue(Long.class);
                     String status = orderSnapshot.child("接單狀況").getValue(String.class);
                     String rejectedReason = orderSnapshot.child("拒絕原因").getValue(String.class);
-                    List<Map<String, Object>> itemList = (List<Map<String, Object>>) orderSnapshot.child("itemList").getValue(); // 獲取 itemList
+                    List<Map<String, Object>> itemList = (List<Map<String, Object>>) orderSnapshot.child("items").getValue(); // 獲取 itemList
 
                     // 構建 itemList 字符串
                     StringBuilder itemsStringBuilder = new StringBuilder();
                     if (itemList != null) {
                         for (Map<String, Object> item : itemList) {
                             itemsStringBuilder.append("\n項目: ")
-                                    .append(item.get("item")).append(", 價格: ")
-                                    .append(item.get("price")).append(", 數量: ")
-                                    .append(item.get("quantity")).append(", 小計: ")
-                                    .append(item.get("subtotal"));
+                                    .append(item.get("title")).append(", 價格: ")
+                                    .append(item.get("description")).append(", 數量: ")
+                                    .append(item.get("quantity"));
                         }
                     }
 
+                    // 使用 orderSnapshot.getKey() 獲取訂單ID，並截取後六位字符
+                    String orderId = orderSnapshot.getKey().substring(orderSnapshot.getKey().length() - 6);
+
                     // 如果訂單狀態為完成訂單
                     if ("完成訂單".equals(status)) {
-                        completedOrders.put(name, "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + itemsStringBuilder.toString()); // 存儲 name 和 itemList
-                        // 如果訂單狀態為拒絕訂單
+                        String orderSummary = "訂購人: " + name; // 簡短摘要
+                        String orderDetails = "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + itemsStringBuilder.toString(); // 完整詳細信息
+                        completedOrders.put(orderId, orderSummary);
+                        completedOrdersDetails.put(orderId, orderDetails);
                     } else if ("拒絕訂單".equals(status)) {
-                        rejectedOrders.put(name, "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + ", 拒絕原因: " + rejectedReason + itemsStringBuilder.toString()); // 存儲 name 和 itemList
+                        String orderSummary = "訂購人: " + name; // 簡短摘要
+                        String orderDetails = "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + ", 拒絕原因: " + rejectedReason + itemsStringBuilder.toString(); // 完整詳細信息
+                        rejectedOrders.put(orderId, orderSummary);
+                        rejectedOrdersDetails.put(orderId, orderDetails);
                     }
                 }
                 // 更新 LiveData
@@ -81,6 +93,16 @@ public class HistoricalOrdersViewModel extends ViewModel {
     // 獲取拒絕訂單的 LiveData 列表
     public LiveData<Map<String, String>> getRejectedOrdersList() {
         return mRejectedOrdersList;
+    }
+
+    // 獲取完成訂單的詳細信息
+    public String getCompletedOrdersDetails(String orderId) {
+        return completedOrdersDetails.get(orderId);
+    }
+
+    // 獲取拒絕訂單的詳細信息
+    public String getRejectedOrdersDetails(String orderId) {
+        return rejectedOrdersDetails.get(orderId);
     }
 
     private String convertTimestampToReadableDate(Long timestamp) {

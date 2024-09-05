@@ -44,26 +44,38 @@ public class HistoricalOrdersFragment extends Fragment {
         // 觀察 LiveData，當數據變化時更新 ListView
         historicalOrdersViewModel.getCompletedOrdersList().observe(getViewLifecycleOwner(), completedOrders -> {
             completedOrdersAdapter.clear();
-            completedOrdersAdapter.addAll(completedOrders.keySet()); // 使用訂單的 key (name) 作為列表項目
+            for (Map.Entry<String, String> entry : completedOrders.entrySet()) {
+                String orderKey = entry.getKey();
+                // 只顯示訂單編號的後六位與名字
+                String displayText = orderKey.substring(orderKey.length() - 6) + " - " + entry.getValue();
+                completedOrdersAdapter.add(displayText);
+            }
             completedOrdersAdapter.notifyDataSetChanged();
         });
 
         historicalOrdersViewModel.getRejectedOrdersList().observe(getViewLifecycleOwner(), rejectedOrders -> {
             rejectedOrdersAdapter.clear();
-            rejectedOrdersAdapter.addAll(rejectedOrders.keySet()); // 使用訂單的 key (name) 作為列表項目
+            for (Map.Entry<String, String> entry : rejectedOrders.entrySet()) {
+                String orderKey = entry.getKey();
+                // 只顯示訂單編號的後六位與名字
+                String displayText = orderKey.substring(orderKey.length() - 6) + " - " + entry.getValue();
+                rejectedOrdersAdapter.add(displayText);
+            }
             rejectedOrdersAdapter.notifyDataSetChanged();
         });
 
         // 為 ListView 設置點擊事件監聽器，顯示訂單詳細資訊
         completedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
-            String orderName = completedOrdersAdapter.getItem(position);
-            String orderDetails = historicalOrdersViewModel.getCompletedOrdersList().getValue().get(orderName); // 獲取詳細資訊
+            String displayText = completedOrdersAdapter.getItem(position);
+            String orderKey = displayText.split(" - ")[0]; // 提取訂單ID的後六位
+            String orderDetails = historicalOrdersViewModel.getCompletedOrdersDetails(orderKey); // 獲取詳細資訊
             showOrderDetailsDialog(orderDetails);
         });
 
         rejectedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
-            String orderName = rejectedOrdersAdapter.getItem(position);
-            String orderDetails = historicalOrdersViewModel.getRejectedOrdersList().getValue().get(orderName); // 獲取詳細資訊
+            String displayText = rejectedOrdersAdapter.getItem(position);
+            String orderKey = displayText.split(" - ")[0]; // 提取訂單ID的後六位
+            String orderDetails = historicalOrdersViewModel.getRejectedOrdersDetails(orderKey); // 獲取詳細資訊
             showOrderDetailsDialog(orderDetails);
         });
 
