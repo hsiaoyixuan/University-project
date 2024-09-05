@@ -36,6 +36,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import android.os.Handler;
+import android.os.Looper;
 
 public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActionListener {
 
@@ -48,6 +50,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
     private FragmentOrderBinding binding;  // 用於綁定UI組件的變量
     private String filterType = "pending"; // 默認顯示未接受訂單
     private RecyclerView recyclerView; // RecyclerView實例
+    private Handler handler = new Handler(Looper.getMainLooper()); // 用於處理定時任務
+    private Runnable fetchOrdersRunnable; // 定義一個Runnable
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -124,6 +128,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 從 Firebase 獲取訂單數據
     private void fetchUserOrders() {
+        if (binding == null) return; // 檢查 binding 是否為 null
+
         ordersRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
@@ -173,8 +179,12 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
             }
         });
 
-        binding.getRoot().postDelayed(this::fetchUserOrders, 60000); // 每分鐘刷新一次數據
+        // 使用Handler進行定時刷新操作
+        fetchOrdersRunnable = this::fetchUserOrders; // 定義Runnable
+        handler.postDelayed(fetchOrdersRunnable, 60000); // 每分鐘刷新一次數據
     }
+
+
 
     // 將時間戳轉換為可讀格式
     private String convertTimestampToReadableDate(Long timestamp) {
@@ -306,6 +316,9 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        handler.removeCallbacks(fetchOrdersRunnable); // 清除所有Handler的回調
         binding = null; // 防止內存泄漏，將綁定設為空
     }
+
+
 }
