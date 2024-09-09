@@ -14,4 +14,15 @@
     <color name="沉紅">#795A5F</color>
     <color name="暖白">#F2ebd9</color>
 
+    <color name="chart1">#C58F8C</color>
+    <color name="chart2">#E3BFBD</color>
+    <color name="chart3">#C9ABA9</color>
+    <color name="chart4">#D49FA3</color>
+
+    <color name="bar1">#F4D79B</color>
+    <color name="bar2">#F8EAB9</color>
+    <color name="bar3">#EDDC89</color>
+    <color name="bar4">#EFE2C0</color>
+
+
 </resources>

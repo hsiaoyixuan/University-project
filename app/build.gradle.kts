@@ -56,5 +56,8 @@ dependencies {
     implementation ("com.google.firebase:firebase-appcheck:18.0.0")
     implementation ("com.google.firebase:firebase-appcheck-safetynet:16.1.2")
 
+    //圖設定
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+
 
 }

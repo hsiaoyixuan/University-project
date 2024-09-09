@@ -69,9 +69,9 @@ public class MenuFragment extends Fragment {
         String uid = currentUser.getUid();
 
         if (uid.equals("hhDjGejvu3bGzaoBAe7ymIGJjqP2")) {
-            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館");
+            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館/食物");
         } else if (uid.equals("XlIoYWkELHR8gytiJYx7EF6rNHr2")) {
-            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏師校區/戀茶屋");
+            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏師校區/戀茶屋/食物");
         } else {
             Log.w(TAG, "Unknown UID: " + uid);
             return;

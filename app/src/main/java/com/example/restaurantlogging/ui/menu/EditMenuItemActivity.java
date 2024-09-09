@@ -71,7 +71,7 @@ public class EditMenuItemActivity extends AppCompatActivity {
 
         // 初始化Firebase Storage引用
         storageReference = FirebaseStorage.getInstance().getReference();
-        menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館");
+        menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館/食物");
 
         // 初始化UI组件
         nameTextView = findViewById(R.id.textViewName);

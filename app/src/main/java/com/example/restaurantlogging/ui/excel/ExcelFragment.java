@@ -1,6 +1,7 @@
 package com.example.restaurantlogging.ui.excel;
 
 import android.app.DatePickerDialog;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,7 +14,17 @@ import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.example.restaurantlogging.R;
 import com.example.restaurantlogging.databinding.FragmentExcelBinding;
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
+import com.github.mikephil.charting.data.PieData;
+import com.github.mikephil.charting.data.PieDataSet;
+import com.github.mikephil.charting.data.PieEntry;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -21,103 +32,89 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-
 public class ExcelFragment extends Fragment {
 
-    // 綁定物件，用於訪問 XML 中的視圖
     private FragmentExcelBinding binding;
     private String selectedDate;  // 保存選定日期的變量
+    private HashMap<String, Integer> dailySalesMap = new HashMap<>(); // 保存每日銷售額的變量
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        // 初始化 ViewModel
         ExcelViewModel excelViewModel =
                 new ViewModelProvider(this).get(ExcelViewModel.class);
 
-        // 使用綁定類來擴展佈局
         binding = FragmentExcelBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // 設定餐廳名稱的 TextView 的內容
         final TextView textView = binding.rsName;
         excelViewModel.getText().observe(getViewLifecycleOwner(), textView::setText);
 
-        // 在初始化時設置當天日期和星期到 date 的 TextView 中
-        setDateToToday();  // 調用方法設置當天日期
+        setDateToToday();  // 初始化當天日期
 
-        // 顯示當天的訂單資料
-        fetchOrdersData(binding.tableLayout, selectedDate);  // 使用當天日期加載對應的訂單數據
+        fetchOrdersData(binding.tableLayout, selectedDate);  // 加載當天的訂單數據
 
-        // 設置日期選擇按鈕的點擊事件處理
+        // 設置選擇日期按鈕的點擊事件
         binding.btnSelectDate.setOnClickListener(v -> onSelectDateClicked());
+
+        // 設置顯示模式切換按鈕的點擊事件
+        binding.btnShowTable.setOnClickListener(v -> showTable());
+        binding.btnShowPieChart.setOnClickListener(v -> showPieChart());
+        binding.btnShowBarChart.setOnClickListener(v -> showBarChart());
 
         return root;
     }
 
-    // 設置當天日期和星期到 date 的 TextView
     private void setDateToToday() {
-        Calendar calendar = Calendar.getInstance();  // 獲取當前時間的 Calendar 實例
-        Date today = calendar.getTime();  // 獲取當前日期
+        Calendar calendar = Calendar.getInstance();
+        Date today = calendar.getTime();
 
-        // 使用 SimpleDateFormat 格式化日期和星期，格式為 "yyyy/MM/dd EEEE"
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd EEEE", Locale.getDefault());
-        String formattedDate = dateFormat.format(today);  // 將日期格式化
-
-        // 將格式化後的日期顯示在 TextView 中
+        String formattedDate = dateFormat.format(today);
         binding.date.setText(formattedDate);
 
-        // 初始化 selectedDate 為當天日期，用於後續數據過濾
-        selectedDate = new SimpleDateFormat("MM/dd", Locale.getDefault()).format(today);
+        selectedDate = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(today);  // 格式更改為 "yyyy/MM/dd"
     }
 
-    // 日期選擇處理方法，當用戶選擇日期時調用
     private void onSelectDateClicked() {
-        Calendar calendar = Calendar.getInstance();  // 獲取當前時間的 Calendar 實例
+        Calendar calendar = Calendar.getInstance();
 
-        // 創建日期選擇對話框
         DatePickerDialog datePickerDialog = new DatePickerDialog(
                 getContext(),
                 (view, year, month, dayOfMonth) -> {
-                    // 設定選定的日期格式，格式為 "MM/dd"
-                    selectedDate = String.format("%02d/%02d", month + 1, dayOfMonth);
+                    selectedDate = String.format("%04d/%02d/%02d", year, month + 1, dayOfMonth);  // 格式為 "yyyy/MM/dd"
 
-                    // 將用戶選擇的日期設置到 Calendar 對象中
                     Calendar selectedCalendar = Calendar.getInstance();
                     selectedCalendar.set(year, month, dayOfMonth);
-                    Date selectedDateObj = selectedCalendar.getTime();  // 獲取選擇的日期對象
+                    Date selectedDateObj = selectedCalendar.getTime();
 
-                    // 格式化用戶選擇的日期和星期，格式為 "yyyy/MM/dd EEEE"
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd EEEE", Locale.getDefault());
                     String formattedDate = dateFormat.format(selectedDateObj);
 
-                    // 將選擇的日期和星期顯示在 date 的 TextView 中
                     binding.date.setText(formattedDate);
 
-                    // 根據選定的日期過濾並顯示對應的訂單數據
                     fetchOrdersData(binding.tableLayout, selectedDate);
                 },
-                calendar.get(Calendar.YEAR),  // 初始化年份
-                calendar.get(Calendar.MONTH),  // 初始化月份
-                calendar.get(Calendar.DAY_OF_MONTH)  // 初始化天
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
         );
 
-        // 顯示日期選擇對話框
         datePickerDialog.show();
     }
 
-    
-    // 根據選定的日期從 Firebase 獲取訂單數據並生成表格
     private void fetchOrdersData(TableLayout tableLayout, String date) {
         HashMap<String, int[]> itemsMap = new HashMap<>();
-        int totalAmount = 0;  // 用于累积总金额的变量
+        int totalAmount = 0;
 
         FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference ordersRef = database.getReference("Orders");
@@ -127,6 +124,7 @@ public class ExcelFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 itemsMap.clear();
                 tableLayout.removeAllViews();
+                dailySalesMap.clear(); // 清除之前的每日銷售數據
 
                 TableRow headerRow = new TableRow(getContext());
                 String[] headers = {"品項", "單價", "數量", "小計"};
@@ -138,33 +136,44 @@ public class ExcelFragment extends Fragment {
                 }
                 tableLayout.addView(headerRow);
 
-                int totalAmount = 0;  // 用于计算总金额
+                int totalAmount = 0;
+
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
 
                 for (DataSnapshot orderSnapshot : dataSnapshot.getChildren()) {
-                    String orderDate = orderSnapshot.child("selectedDate").getValue(String.class);
+                    Long timestamp = orderSnapshot.child("timestamp").getValue(Long.class);
                     String status = orderSnapshot.child("接單狀況").getValue(String.class);
 
-                    if (date.equals(orderDate) && "完成訂單".equals(status)) {
-                        for (DataSnapshot itemSnapshot : orderSnapshot.child("items").getChildren()) {
-                            String title = itemSnapshot.child("title").getValue(String.class);
-                            String price = itemSnapshot.child("description").getValue(String.class);
-                            int quantity = itemSnapshot.child("quantity").getValue(Integer.class);
-                            int subtotal = calculateSubtotal(price, quantity);
+                    if (timestamp != null && "完成訂單".equals(status)) {
+                        String orderDate = sdf.format(new Date(timestamp));  // 轉換時間戳為日期
 
-                            totalAmount += subtotal;  // 累加小计到总金额
+                        // 累計每天的總銷售額
+                        int dailyTotal = dailySalesMap.getOrDefault(orderDate, 0);
 
-                            if (itemsMap.containsKey(title)) {
-                                int[] currentData = itemsMap.get(title);
-                                currentData[0] += quantity;
-                                currentData[1] += subtotal;
-                            } else {
-                                itemsMap.put(title, new int[]{quantity, subtotal});
+                        if (date.equals(orderDate)) {  // 與選擇的日期比較
+                            for (DataSnapshot itemSnapshot : orderSnapshot.child("items").getChildren()) {
+                                String title = itemSnapshot.child("title").getValue(String.class);
+                                String price = itemSnapshot.child("description").getValue(String.class);
+                                int quantity = itemSnapshot.child("quantity").getValue(Integer.class);
+                                int subtotal = calculateSubtotal(price, quantity);
+
+                                totalAmount += subtotal;
+                                dailyTotal += subtotal; // 累加當日的總銷售額
+
+                                if (itemsMap.containsKey(title)) {
+                                    int[] currentData = itemsMap.get(title);
+                                    currentData[0] += quantity;
+                                    currentData[1] += subtotal;
+                                } else {
+                                    itemsMap.put(title, new int[]{quantity, subtotal});
+                                }
                             }
                         }
+
+                        dailySalesMap.put(orderDate, dailyTotal); // 更新每天的總銷售額
                     }
                 }
 
-                // 遍历 HashMap 并将累积结果添加到表格中
                 for (Map.Entry<String, int[]> entry : itemsMap.entrySet()) {
                     String item = entry.getKey();
                     String quantity = String.valueOf(entry.getValue()[0]);
@@ -174,45 +183,127 @@ public class ExcelFragment extends Fragment {
                     addRowToTable(tableLayout, item, price, quantity, subtotal);
                 }
 
-                // 在表格加载完成后显示总金额
-                binding.totalAmount.setText("當日總金額:$" + totalAmount );
+                binding.totalAmount.setText("當日總金額:$" + totalAmount);
+
+                // 更新圓餅圖數據
+                updatePieChart(itemsMap);
+                // 更新長條圖數據
+                updateBarChart();
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                // 处理 Firebase 查询取消的情况
+                // 處理 Firebase 查詢取消的情況
             }
         });
     }
 
-
-
-    // 計算小計
     private int calculateSubtotal(String price, int quantity) {
-        // 去掉價格中的 $ 符號，並將其轉換為整數後乘以數量
         return Integer.parseInt(price.replace("$", "")) * quantity;
     }
 
-    // 將數據添加到表格中
     private void addRowToTable(TableLayout tableLayout, String item, String price, String quantity, String subtotal) {
-        TableRow tableRow = new TableRow(getContext());  // 創建一個新的 TableRow
+        TableRow tableRow = new TableRow(getContext());
 
-        // 將每個欄位的數據添加到 TableRow 中
         String[] rowData = {item, price, quantity, subtotal};
         for (String data : rowData) {
             TextView textView = new TextView(getContext());
-            textView.setText(data);  // 設置 TextView 的文本為對應的數據
-            textView.setPadding(8, 8, 8, 8);  // 設置內邊距
-            tableRow.addView(textView);  // 將 TextView 添加到 TableRow 中
+            textView.setText(data);
+            textView.setPadding(8, 8, 8, 8);
+            tableRow.addView(textView);
         }
 
-        // 將這個新的 TableRow 添加到 TableLayout 中，形成表格中的一行
         tableLayout.addView(tableRow);
     }
+
+    // 顯示表格
+    private void showTable() {
+        binding.tableScrollView.setVisibility(View.VISIBLE);
+        binding.pieChart.setVisibility(View.GONE);
+        binding.barChart.setVisibility(View.GONE);
+    }
+
+    // 顯示圓餅圖
+    private void showPieChart() {
+        binding.tableScrollView.setVisibility(View.GONE);
+        binding.pieChart.setVisibility(View.VISIBLE);
+        binding.barChart.setVisibility(View.GONE);
+    }
+
+    // 顯示長條圖
+    private void showBarChart() {
+        binding.tableScrollView.setVisibility(View.GONE);
+        binding.pieChart.setVisibility(View.GONE);
+        binding.barChart.setVisibility(View.VISIBLE);
+    }
+
+    // 更新圓餅圖數據
+    private void updatePieChart(HashMap<String, int[]> itemsMap) {
+        PieChart pieChart = binding.pieChart;
+
+        List<PieEntry> entries = new ArrayList<>();
+        for (Map.Entry<String, int[]> entry : itemsMap.entrySet()) {
+            String item = entry.getKey();
+            int quantity = entry.getValue()[0];
+            entries.add(new PieEntry(quantity, item));
+        }
+
+        PieDataSet dataSet = new PieDataSet(entries, "銷售品項");
+
+        // 使用定義的顏色資源
+        int[] chartColors = new int[] {
+                getResources().getColor(R.color.chart1),
+                getResources().getColor(R.color.chart2),
+                getResources().getColor(R.color.chart3),
+                getResources().getColor(R.color.chart4)
+        };
+        dataSet.setColors(chartColors);  // 設置圓餅圖顏色
+        dataSet.setValueTextColor(Color.BLACK);  // 設置數據文本顏色
+
+        PieData data = new PieData(dataSet);
+        pieChart.setData(data);
+        pieChart.invalidate();  // 刷新圖表
+
+        Legend legend = pieChart.getLegend();
+        legend.setEnabled(true);  // 顯示圖例
+    }
+
+    // 更新長條圖數據
+    private void updateBarChart() {
+        BarChart barChart = binding.barChart;
+
+        List<BarEntry> entries = new ArrayList<>();
+        int index = 0;
+        for (Map.Entry<String, Integer> entry : dailySalesMap.entrySet()) {
+            String date = entry.getKey();
+            int totalSales = entry.getValue();
+            entries.add(new BarEntry(index++, totalSales)); // 使用索引添加條目
+        }
+
+        BarDataSet dataSet = new BarDataSet(entries, "每日總營業額");
+
+        // 使用定義的顏色資源
+        int[] barColors = new int[] {
+                getResources().getColor(R.color.bar1),
+                getResources().getColor(R.color.bar2),
+                getResources().getColor(R.color.bar3),
+                getResources().getColor(R.color.bar4)
+        };
+        dataSet.setColors(barColors);  // 設置顏色集合
+        dataSet.setValueTextColor(Color.BLACK);  // 設置數據文本顏色
+
+        BarData data = new BarData(dataSet);
+        barChart.setData(data);
+        barChart.invalidate();  // 刷新圖表
+
+        Legend legend = barChart.getLegend();
+        legend.setEnabled(true);  // 顯示圖例
+    }
+
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;  // 清理綁定對象以防止內存洩漏
+        binding = null;
     }
 }

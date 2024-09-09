@@ -7,80 +7,130 @@
     android:paddingTop="65dp">
 
     <!-- 日期显示 TextView -->
+
+    <!-- 日期选择按钮，显示在 date TextView 的后面 -->
+
+    <!-- 添加顯示模式切換按鈕 -->
+
+    <TextView
+        android:id="@+id/rs_name"
+        android:layout_width="172dp"
+        android:layout_height="57dp"
+        android:layout_marginStart="48dp"
+        android:text="RN"
+        android:textSize="24sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <TextView
         android:id="@+id/date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginStart="220dp"
         android:text="2024/08/10 星期六"
         android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/btn_select_date"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 日期选择按钮，显示在 date TextView 的后面 -->
     <Button
         android:id="@+id/btn_select_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="-10dp"
         android:text="選擇日期"
-        app:layout_constraintStart_toEndOf="@id/date"
-        app:layout_constraintTop_toTopOf="@id/date"/>
+        app:layout_constraintStart_toEndOf="@+id/date"
+        app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 餐馆名称显示 TextView -->
-
-    <!-- 表格使用 ScrollView 包裹 -->
-    <TextView
-        android:id="@+id/rs_name"
+    <Button
+        android:id="@+id/btn_show_table"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:layout_marginTop="8dp"
-        android:text="餐馆名称示例"
-        android:textSize="24sp"
-        app:layout_constraintTop_toBottomOf="@id/date"
-        tools:layout_editor_absoluteX="32dp" />
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="60dp"
+        android:text="表格模式"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <!-- 使用 FrameLayout 來切換不同的顯示模式 -->
+    <Button
+        android:id="@+id/btn_show_pie_chart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="60dp"
+        android:text="圓餅圖模式"
+        app:layout_constraintStart_toEndOf="@+id/btn_show_table"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <!-- 用于显示结算总金额的 TextView，显示在右下角 -->
-    <ScrollView
-        android:layout_width="1284dp"
-        android:layout_height="478dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.06"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/rs_name">
 
-        <LinearLayout
+    <Button
+        android:id="@+id/btn_show_bar_chart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="56dp"
+        android:text="長條圖模式"
+        app:layout_constraintStart_toEndOf="@+id/btn_show_pie_chart"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <FrameLayout
+        android:id="@+id/display_container"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/btn_show_table"
+        app:layout_constraintVertical_bias="0.0">
+
+        <!-- 表格模式：使用 ScrollView 包裹 -->
+        <ScrollView
+            android:id="@+id/table_scroll_view"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:visibility="visible">
 
-            <!-- 表格内容 -->
-            <TableLayout
-                android:id="@+id/tableLayout"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_margin="16dp"
-                android:stretchColumns="1" />
+                android:orientation="vertical">
 
-        </LinearLayout>
+                <!-- 表格内容 -->
+                <TableLayout
+                    android:id="@+id/tableLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="16dp"
+                    android:stretchColumns="1" />
 
-    </ScrollView>
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- 圓餅圖模式 -->
+
+        <!-- 長條圖模式 -->
+
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/pie_chart"
+            android:layout_width="1175dp"
+            android:layout_height="453dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </FrameLayout>
 
     <TextView
         android:id="@+id/totalAmount"
-        android:layout_width="199dp"
-        android:layout_height="47dp"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="152dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="16dp"
         android:text="當日總金額:"
         android:textColor="#FF0000"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
+        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -133,6 +133,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         ordersRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                if (!isAdded()) return; // 確保 Fragment 已附加
+
                 orderList.clear(); // 清空舊的訂單數據
                 long currentTime = System.currentTimeMillis(); // 獲取當前時間戳
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
@@ -184,8 +186,6 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         handler.postDelayed(fetchOrdersRunnable, 60000); // 每分鐘刷新一次數據
     }
 
-
-
     // 將時間戳轉換為可讀格式
     private String convertTimestampToReadableDate(Long timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
@@ -220,6 +220,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 檢查訂單狀態是否有變更
     private void checkForOrderUpdates(String orderId, Map<String, Object> currentOrder) {
+        if (!isAdded()) return; // 確保 Fragment 已附加
+
         Map<String, Object> previousOrder = previousOrders.get(orderId); // 獲取之前的訂單狀態
 
         if (previousOrder == null) {
@@ -248,6 +250,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 創建通知頻道
     private void createNotificationChannel() {
+        if (!isAdded()) return; // 確保 Fragment 已附加
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "Order Notification";
             String description = "Channel for order notifications";
@@ -262,6 +266,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 發送新訂單通知
     private void sendOrderNotification(Map<String, Object> order) {
+        if (!isAdded()) return; // 確保 Fragment 已附加
+
         String orderNumber = "訂單編號: " + order.get("orderNumber");
         String name = "訂購人姓名: " + order.get("名字");
         String timeDifference = "預計取餐時間: " + order.get("differenceInMinutes") + " 分鐘";
@@ -272,6 +278,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 發送狀態變更通知
     private void sendStatusChangeNotification(Map<String, Object> order) {
+        if (!isAdded()) return; // 確保 Fragment 已附加
+
         String orderNumber = "訂單編號: " + order.get("orderNumber");
         String name = "訂購人姓名: " + order.get("名字");
         String status = "接單狀況已更新: " + order.get("接單狀況");
@@ -282,6 +290,8 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 發送取餐時間變更通知
     private void sendPickupTimeChangeNotification(Map<String, Object> order) {
+        if (!isAdded()) return; // 確保 Fragment 已附加
+
         String orderNumber = "訂單編號: " + order.get("orderNumber");
         String name = "訂購人姓名: " + order.get("名字");
         String pickupTimeMessage = "您的訂單取餐時間更改為 " + order.get("取餐時間") + " 分鐘後可以取餐。";
@@ -292,6 +302,11 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
 
     // 發送通知
     private void sendNotification(String title, String message) {
+        if (!isAdded()) {
+            Log.w("OrderFragment", "Fragment not attached to context; cannot send notification.");
+            return; // Fragment 未附加，不發送通知
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -319,6 +334,4 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         handler.removeCallbacks(fetchOrdersRunnable); // 清除所有Handler的回調
         binding = null; // 防止內存泄漏，將綁定設為空
     }
-
-
 }
