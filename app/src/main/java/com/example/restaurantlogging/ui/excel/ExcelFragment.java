@@ -1,6 +1,7 @@
 package com.example.restaurantlogging.ui.excel;
 
 import android.app.DatePickerDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -126,10 +127,16 @@ public class ExcelFragment extends Fragment {
                 tableLayout.removeAllViews();
                 dailySalesMap.clear(); // 清除之前的每日銷售數據
 
-                TableRow headerRow = new TableRow(getContext());
+                // **改動：在使用 getContext() 前檢查它是否為 null**
+                Context context = getContext();  // 獲取 Context
+                if (context == null) return;  // 如果 Context 為 null，則返回，避免 NullPointerException
+
+                // **改動：使用 context 來創建 TableRow**
+                TableRow headerRow = new TableRow(context);  // 使用已檢查的 context
+
                 String[] headers = {"品項", "單價", "數量", "小計"};
                 for (String header : headers) {
-                    TextView textView = new TextView(getContext());
+                    TextView textView = new TextView(context);  // 使用已檢查的 context
                     textView.setText(header);
                     textView.setPadding(8, 8, 8, 8);
                     headerRow.addView(textView);
@@ -203,11 +210,12 @@ public class ExcelFragment extends Fragment {
     }
 
     private void addRowToTable(TableLayout tableLayout, String item, String price, String quantity, String subtotal) {
-        TableRow tableRow = new TableRow(getContext());
+        // **改動：使用 requireContext() 確保 context 不為 null**
+        TableRow tableRow = new TableRow(requireContext());
 
         String[] rowData = {item, price, quantity, subtotal};
         for (String data : rowData) {
-            TextView textView = new TextView(getContext());
+            TextView textView = new TextView(requireContext());
             textView.setText(data);
             textView.setPadding(8, 8, 8, 8);
             tableRow.addView(textView);
@@ -299,7 +307,6 @@ public class ExcelFragment extends Fragment {
         Legend legend = barChart.getLegend();
         legend.setEnabled(true);  // 顯示圖例
     }
-
 
     @Override
     public void onDestroyView() {

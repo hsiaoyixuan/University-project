@@ -120,6 +120,12 @@
             android:visibility="gone"
             tools:visibility="visible" />
 
+        <com.github.mikephil.charting.charts.BarChart
+            android:id="@+id/bar_chart"
+            android:layout_width="1180dp"
+            android:layout_height="452dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
     </FrameLayout>
 
     <TextView

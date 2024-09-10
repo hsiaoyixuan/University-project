@@ -172,7 +172,7 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
                         orderList.add(order); // 添加訂單到列表
                     }
                 }
-                orderAdapter.notifyDataSetChanged(); // 通知適配器數據已更改
+                orderAdapter.updateFilter(filterType); // 更新适配器筛选
             }
 
             @Override
