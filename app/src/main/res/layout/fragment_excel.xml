@@ -17,6 +17,7 @@
         android:layout_width="172dp"
         android:layout_height="57dp"
         android:layout_marginStart="48dp"
+        android:layout_marginTop="4dp"
         android:text="RN"
         android:textSize="24sp"
         app:layout_constraintStart_toStartOf="parent"
@@ -27,6 +28,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="220dp"
+        android:layout_marginTop="4dp"
         android:text="2024/08/10 星期六"
         android:textSize="20sp"
         app:layout_constraintStart_toStartOf="parent"
@@ -73,6 +75,19 @@
         android:layout_marginTop="56dp"
         android:text="長條圖模式"
         app:layout_constraintStart_toEndOf="@+id/btn_show_pie_chart"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+        android:id="@+id/totalAmount"
+        android:layout_width="303dp"
+        android:layout_height="31dp"
+        android:layout_margin="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="300dp"
+        android:text="當日總金額:"
+        android:textColor="#FF0000"
+        android:textSize="20sp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <FrameLayout
@@ -127,16 +142,5 @@
             android:visibility="gone"
             tools:visibility="visible" />
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/totalAmount"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_margin="16dp"
-        android:text="當日總金額:"
-        android:textColor="#FF0000"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

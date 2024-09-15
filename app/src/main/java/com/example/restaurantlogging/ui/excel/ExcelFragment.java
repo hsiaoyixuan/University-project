@@ -46,6 +46,7 @@ public class ExcelFragment extends Fragment {
     private FragmentExcelBinding binding;
     private String selectedDate;  // 保存選定日期的變量
     private HashMap<String, Integer> dailySalesMap = new HashMap<>(); // 保存每日銷售額的變量
+    private Calendar startOfWeek;  // 保存當前日期所在週的起始日期（星期日）
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
@@ -63,6 +64,7 @@ public class ExcelFragment extends Fragment {
         setDateToToday();  // 初始化當天日期
 
         fetchOrdersData(binding.tableLayout, selectedDate);  // 加載當天的訂單數據
+        fetchWeeklySalesData();  // 加載當週的總營業數據
 
         // 設置選擇日期按鈕的點擊事件
         binding.btnSelectDate.setOnClickListener(v -> onSelectDateClicked());
@@ -84,6 +86,15 @@ public class ExcelFragment extends Fragment {
         binding.date.setText(formattedDate);
 
         selectedDate = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(today);  // 格式更改為 "yyyy/MM/dd"
+
+        // 設定當前日期所在週的起始日期（週日）
+        setStartOfWeek(calendar);
+    }
+
+    private void setStartOfWeek(Calendar calendar) {
+        // 將所選日期的日曆設置為該週的週日
+        startOfWeek = (Calendar) calendar.clone();
+        startOfWeek.set(Calendar.DAY_OF_WEEK, Calendar.SUNDAY);  // 設置為當週週日
     }
 
     private void onSelectDateClicked() {
@@ -103,7 +114,10 @@ public class ExcelFragment extends Fragment {
 
                     binding.date.setText(formattedDate);
 
-                    fetchOrdersData(binding.tableLayout, selectedDate);
+                    setStartOfWeek(selectedCalendar);  // 更新所選日期所在週的起始日期
+
+                    fetchOrdersData(binding.tableLayout, selectedDate);  // 加載選擇日期的數據
+                    fetchWeeklySalesData();  // 加載選定日期所在週的總營業數據
                 },
                 calendar.get(Calendar.YEAR),
                 calendar.get(Calendar.MONTH),
@@ -125,13 +139,10 @@ public class ExcelFragment extends Fragment {
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 itemsMap.clear();
                 tableLayout.removeAllViews();
-                dailySalesMap.clear(); // 清除之前的每日銷售數據
 
-                // **改動：在使用 getContext() 前檢查它是否為 null**
                 Context context = getContext();  // 獲取 Context
                 if (context == null) return;  // 如果 Context 為 null，則返回，避免 NullPointerException
 
-                // **改動：使用 context 來創建 TableRow**
                 TableRow headerRow = new TableRow(context);  // 使用已檢查的 context
 
                 String[] headers = {"品項", "單價", "數量", "小計"};
@@ -154,9 +165,7 @@ public class ExcelFragment extends Fragment {
                     if (timestamp != null && "完成訂單".equals(status)) {
                         String orderDate = sdf.format(new Date(timestamp));  // 轉換時間戳為日期
 
-                        // 累計每天的總銷售額
-                        int dailyTotal = dailySalesMap.getOrDefault(orderDate, 0);
-
+                        // 顯示選定日期的數據
                         if (date.equals(orderDate)) {  // 與選擇的日期比較
                             for (DataSnapshot itemSnapshot : orderSnapshot.child("items").getChildren()) {
                                 String title = itemSnapshot.child("title").getValue(String.class);
@@ -165,7 +174,6 @@ public class ExcelFragment extends Fragment {
                                 int subtotal = calculateSubtotal(price, quantity);
 
                                 totalAmount += subtotal;
-                                dailyTotal += subtotal; // 累加當日的總銷售額
 
                                 if (itemsMap.containsKey(title)) {
                                     int[] currentData = itemsMap.get(title);
@@ -176,8 +184,6 @@ public class ExcelFragment extends Fragment {
                                 }
                             }
                         }
-
-                        dailySalesMap.put(orderDate, dailyTotal); // 更新每天的總銷售額
                     }
                 }
 
@@ -194,8 +200,6 @@ public class ExcelFragment extends Fragment {
 
                 // 更新圓餅圖數據
                 updatePieChart(itemsMap);
-                // 更新長條圖數據
-                updateBarChart();
             }
 
             @Override
@@ -205,12 +209,62 @@ public class ExcelFragment extends Fragment {
         });
     }
 
+    private void fetchWeeklySalesData() {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference ordersRef = database.getReference("Orders");
+
+        ordersRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                dailySalesMap.clear(); // 清除之前的每日銷售數據
+
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault());
+
+                for (DataSnapshot orderSnapshot : dataSnapshot.getChildren()) {
+                    Long timestamp = orderSnapshot.child("timestamp").getValue(Long.class);
+                    String status = orderSnapshot.child("接單狀況").getValue(String.class);
+
+                    if (timestamp != null && "完成訂單".equals(status)) {
+                        String orderDate = sdf.format(new Date(timestamp));  // 轉換時間戳為日期
+
+                        // **改動：為選定日期所在週的每一天累計銷售額**
+                        Calendar orderCalendar = Calendar.getInstance();
+                        orderCalendar.setTime(new Date(timestamp));
+                        if (isSameWeek(orderCalendar, startOfWeek)) {  // 如果訂單日期在所選週範圍內
+                            int dailyTotal = dailySalesMap.getOrDefault(orderDate, 0);  // 獲取該日的累計銷售額
+                            for (DataSnapshot itemSnapshot : orderSnapshot.child("items").getChildren()) {
+                                String price = itemSnapshot.child("description").getValue(String.class);
+                                int quantity = itemSnapshot.child("quantity").getValue(Integer.class);
+                                int subtotal = calculateSubtotal(price, quantity);
+                                dailyTotal += subtotal; // 累計當日銷售額
+                            }
+                            dailySalesMap.put(orderDate, dailyTotal); // 更新每日的總銷售額
+                        }
+                    }
+                }
+
+                // 更新長條圖數據
+                updateBarChart();  // 更新長條圖數據時會顯示所選日期所在週的所有天數
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+                // 處理 Firebase 查詢取消的情況
+            }
+        });
+    }
+
+    private boolean isSameWeek(Calendar targetCalendar, Calendar referenceWeekStart) {
+        Calendar endOfWeek = (Calendar) referenceWeekStart.clone();
+        endOfWeek.add(Calendar.DAY_OF_WEEK, 6); // 設置該週的結束日期為週六
+        return targetCalendar.compareTo(referenceWeekStart) >= 0 && targetCalendar.compareTo(endOfWeek) <= 0;  // 檢查目標日期是否在週範圍內
+    }
+
     private int calculateSubtotal(String price, int quantity) {
         return Integer.parseInt(price.replace("$", "")) * quantity;
     }
 
     private void addRowToTable(TableLayout tableLayout, String item, String price, String quantity, String subtotal) {
-        // **改動：使用 requireContext() 確保 context 不為 null**
         TableRow tableRow = new TableRow(requireContext());
 
         String[] rowData = {item, price, quantity, subtotal};
@@ -282,10 +336,15 @@ public class ExcelFragment extends Fragment {
 
         List<BarEntry> entries = new ArrayList<>();
         int index = 0;
-        for (Map.Entry<String, Integer> entry : dailySalesMap.entrySet()) {
-            String date = entry.getKey();
-            int totalSales = entry.getValue();
+
+        Calendar calendar = (Calendar) startOfWeek.clone();  // **改動：從所選日期所在週的週日開始**
+
+        // 迭代該週的每一天（從週日到週六）
+        for (int i = 0; i < 7; i++) {
+            String dateStr = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(calendar.getTime());  // 格式化日期為字符串
+            int totalSales = dailySalesMap.getOrDefault(dateStr, 0);  // 根據日期獲取銷售額
             entries.add(new BarEntry(index++, totalSales)); // 使用索引添加條目
+            calendar.add(Calendar.DAY_OF_MONTH, 1);  // 日期加一天
         }
 
         BarDataSet dataSet = new BarDataSet(entries, "每日總營業額");

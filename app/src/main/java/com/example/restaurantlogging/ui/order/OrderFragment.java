@@ -6,6 +6,8 @@ import android.app.NotificationManager;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -36,30 +38,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import android.os.Handler;
-import android.os.Looper;
 
 public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActionListener {
 
-    private static final String CHANNEL_ID = "order_notification_channel"; // 通知頻道ID
-    private static final int REQUEST_CODE_POST_NOTIFICATIONS = 1; // 通知權限請求代碼
-    private DatabaseReference ordersRef; // Firebase資料庫參考
-    private OrderAdapter orderAdapter; // RecyclerView的適配器
-    private List<Map<String, Object>> orderList; // 訂單列表
-    private Map<String, Map<String, Object>> previousOrders = new HashMap<>(); // 保存之前的訂單狀態
-    private FragmentOrderBinding binding;  // 用於綁定UI組件的變量
-    private String filterType = "pending"; // 默認顯示未接受訂單
-    private RecyclerView recyclerView; // RecyclerView實例
-    private Handler handler = new Handler(Looper.getMainLooper()); // 用於處理定時任務
-    private Runnable fetchOrdersRunnable; // 定義一個Runnable
+    private static final String CHANNEL_ID = "order_notification_channel";
+    private static final int REQUEST_CODE_POST_NOTIFICATIONS = 1;
+    private DatabaseReference ordersRef;
+    private OrderAdapter orderAdapter;
+    private List<Map<String, Object>> orderList;
+    private Map<String, Map<String, Object>> previousOrders = new HashMap<>();
+    private FragmentOrderBinding binding;
+    private String filterType = "pending";
+    private RecyclerView recyclerView;
+    private Handler handler = new Handler(Looper.getMainLooper());
+    private Runnable fetchOrdersRunnable;
+    private String currentRestaurantName;
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // 初始化綁定變量，並設置根視圖
         binding = FragmentOrderBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // 檢查並請求通知權限（API 33及以上）
+        // 權限檢查
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
@@ -69,131 +69,149 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
             }
         }
 
-        createNotificationChannel();  // 創建通知頻道
-        ordersRef = FirebaseDatabase.getInstance().getReference("Orders"); // 初始化 Firebase 資料庫引用
-        setupRecyclerView(root); // 設置RecyclerView
+        // 創建通知通道
+        createNotificationChannel();
+        ordersRef = FirebaseDatabase.getInstance().getReference("Orders");
 
-        // 設置按鈕點擊事件來切換顯示不同類型的訂單
+        // 從 arguments 獲取當前餐廳名稱
+        Bundle arguments = getArguments();
+        if (arguments != null) { // 修改：檢查 arguments 是否為 null
+            currentRestaurantName = arguments.getString("restaurantName", "");  // 從 Bundle 中獲取傳遞過來的餐廳名稱
+        } else {
+            currentRestaurantName = "";
+            Log.e("OrderFragment", "No restaurant name provided in arguments.");
+        }
+
+        setupRecyclerView(root);
+
+        // 設定按鈕的點擊事件
         binding.buttonShowPendingOrders.setOnClickListener(v -> {
-            filterType = "pending"; // 設置篩選類型為“未接受”
+            filterType = "pending";
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(); // 更新按鈕顏色
-            recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
+            updateButtonColors();
+            recyclerView.scrollToPosition(0);
         });
 
         binding.buttonShowAcceptedOrders.setOnClickListener(v -> {
-            filterType = "accepted"; // 設置篩選類型為“已接受”
+            filterType = "accepted";
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(); // 更新按鈕顏色
-            recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
+            updateButtonColors();
+            recyclerView.scrollToPosition(0);
         });
 
         binding.buttonShowDelayedOrders.setOnClickListener(v -> {
-            filterType = "delayed"; // 設置篩選類型為“延遲”
+            filterType = "delayed";
             orderAdapter.updateFilter(filterType);
-            updateButtonColors(); // 更新按鈕顏色
-            recyclerView.scrollToPosition(0); // 滾動到RecyclerView的頂部
+            updateButtonColors();
+            recyclerView.scrollToPosition(0);
         });
 
-        fetchUserOrders(); // 從 Firebase 獲取訂單數據
+        fetchUserOrders();  // 呼叫方法來獲取訂單
         return root;
     }
 
-    // 初始化並設置RecyclerView
     private void setupRecyclerView(View root) {
-        orderList = new ArrayList<>(); // 初始化訂單列表
-        orderAdapter = new OrderAdapter(orderList, this, filterType); // 初始化適配器
+        orderList = new ArrayList<>();
+        orderAdapter = new OrderAdapter(orderList, this, filterType);
 
-        recyclerView = root.findViewById(R.id.recycler_view_orders); // 綁定RecyclerView
-        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity())); // 設置布局管理器
-        recyclerView.setAdapter(orderAdapter); // 設置適配器
+        recyclerView = root.findViewById(R.id.recycler_view_orders);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        recyclerView.setAdapter(orderAdapter);
     }
 
-    // 接受訂單的操作
     @Override
     public void onAcceptOrder(Map<String, Object> order) {
-        order.put("接單狀況", "接受訂單"); // 更新本地狀態
-        ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("接受訂單"); // 更新Firebase狀態
-        fetchUserOrders(); // 重新加載數據，更新列表
+        order.put("接單狀況", "接受訂單");
+        ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("接受訂單");
+        fetchUserOrders();
     }
 
-    // 拒絕訂單的操作
     @Override
     public void onRejectOrder(Map<String, Object> order, String reason) {
-        ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("拒絕訂單"); // 更新Firebase狀態
-        ordersRef.child((String) order.get("orderId")).child("拒絕原因").setValue(reason); // 保存拒絕原因
-        fetchUserOrders(); // 重新加載數據，更新列表
-        Toast.makeText(getActivity(), "訂單已拒絕: " + reason, Toast.LENGTH_SHORT).show(); // 顯示拒絕通知
+        ordersRef.child((String) order.get("orderId")).child("接單狀況").setValue("拒絕訂單");
+        ordersRef.child((String) order.get("orderId")).child("拒絕原因").setValue(reason);
+        fetchUserOrders();
+        Toast.makeText(getActivity(), "訂單已拒絕: " + reason, Toast.LENGTH_SHORT).show();
     }
 
-    // 從 Firebase 獲取訂單數據
     private void fetchUserOrders() {
-        if (binding == null) return; // 檢查 binding 是否為 null
+        if (binding == null) return; // 確保 binding 不為 null
 
         ordersRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                if (!isAdded()) return; // 確保 Fragment 已附加
+                if (!isAdded()) return; // 檢查 Fragment 是否仍然附加到活動
 
-                orderList.clear(); // 清空舊的訂單數據
-                long currentTime = System.currentTimeMillis(); // 獲取當前時間戳
+                orderList.clear();
+                long currentTime = System.currentTimeMillis();
                 for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                     Map<String, Object> order = (Map<String, Object>) snapshot.getValue();
                     if (order != null) {
+                        // 根據餐廳名稱篩選訂單
+                        String restaurantName = (String) order.get("restaurantName");
+                        if (!currentRestaurantName.equals(restaurantName)) {
+                            continue;  // 跳過不屬於當前餐廳的訂單
+                        }
+
                         String status = (String) order.get("接單狀況");
                         if ("完成訂單".equals(status) || "拒絕訂單".equals(status)) {
-                            continue; // 跳過已完成或已拒絕的訂單
+                            continue;  // 跳過已完成或已拒絕的訂單
                         }
 
                         Long timestamp = (Long) order.get("uploadTimestamp");
                         if (timestamp != null) {
-                            String readableDate = convertTimestampToReadableDate(timestamp); // 將時間戳轉換為可讀的日期時間格式
+                            String readableDate = convertTimestampToReadableDate(timestamp);
                             order.put("readableDate", readableDate);
                         }
                         Long timestamp1 = (Long) order.get("timestamp");
                         if (timestamp1 != null) {
-                            String readableDate = convertTimestampToReadableDate(timestamp1); // 將時間戳轉換為可讀的日期時間格式
+                            String readableDate = convertTimestampToReadableDate(timestamp1);
                             order.put("readableDate1", readableDate);
                         }
-                        Long orderTime = (Long) order.get("取餐時間"); // 獲取取餐時間
+                        Long orderTime = (Long) order.get("取餐時間");
                         if (orderTime != null) {
                             long differenceInMillis = orderTime - currentTime;
-                            long differenceInMinutes = differenceInMillis / (60 * 1000); // 計算取餐時間的分鐘數
+                            long differenceInMinutes = differenceInMillis / (60 * 1000);
                             order.put("differenceInMinutes", differenceInMinutes);
                         }
                         String orderId = snapshot.getKey();
                         if (orderId != null && orderId.length() > 6) {
-                            String orderNumber = orderId.substring(orderId.length() - 6); // 提取訂單號碼
-                            order.put("orderNumber", orderNumber); // 將訂單號碼存入 Map
+                            String orderNumber = orderId.substring(orderId.length() - 6);
+                            order.put("orderNumber", orderNumber);
                         }
 
-                        order.put("orderId", snapshot.getKey()); // 保存訂單ID
-                        checkForOrderUpdates(snapshot.getKey(), order); // 檢查訂單狀態是否有變更
-                        orderList.add(order); // 添加訂單到列表
+                        order.put("orderId", snapshot.getKey());
+
+                        // 檢查是否為新訂單，並發送通知
+                        if (!previousOrders.containsKey(snapshot.getKey())) {
+                            sendOrderNotification(order); // 修改：新增訂單時發送通知
+                        }
+
+                        previousOrders.put(snapshot.getKey(), order); // 更新已處理的訂單
+
+                        orderList.add(order);
                     }
                 }
-                orderAdapter.updateFilter(filterType); // 更新适配器筛选
+                orderAdapter.updateFilter(filterType);
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {
-                Log.w("RealtimeDatabase", "loadPost:onCancelled", databaseError.toException()); // 錯誤處理
+                Log.w("RealtimeDatabase", "loadPost:onCancelled", databaseError.toException());
             }
         });
 
-        // 使用Handler進行定時刷新操作
-        fetchOrdersRunnable = this::fetchUserOrders; // 定義Runnable
-        handler.postDelayed(fetchOrdersRunnable, 60000); // 每分鐘刷新一次數據
+        fetchOrdersRunnable = this::fetchUserOrders;
+        handler.postDelayed(fetchOrdersRunnable, 60000);
     }
 
-    // 將時間戳轉換為可讀格式
     private String convertTimestampToReadableDate(Long timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
         return sdf.format(new Date(timestamp));
     }
 
-    // 更新按鈕背景顏色和RecyclerView背景顏色的方法
     private void updateButtonColors() {
+        // 設定按鈕的顏色
         binding.buttonShowPendingOrders.setBackgroundColor(getResources().getColor(R.color.崎紅));
         binding.buttonShowPendingOrders.setTextColor(getResources().getColor(R.color.暖白));
         binding.buttonShowAcceptedOrders.setBackgroundColor(getResources().getColor(R.color.崎紅));
@@ -201,7 +219,6 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         binding.buttonShowDelayedOrders.setBackgroundColor(getResources().getColor(R.color.崎紅));
         binding.buttonShowDelayedOrders.setTextColor(getResources().getColor(R.color.暖白));
 
-        // 設置當前選中的按鈕背景顏色
         switch (filterType) {
             case "pending":
                 binding.buttonShowPendingOrders.setBackgroundColor(getResources().getColor(R.color.暖白));
@@ -218,99 +235,45 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
         }
     }
 
-    // 檢查訂單狀態是否有變更
-    private void checkForOrderUpdates(String orderId, Map<String, Object> currentOrder) {
-        if (!isAdded()) return; // 確保 Fragment 已附加
-
-        Map<String, Object> previousOrder = previousOrders.get(orderId); // 獲取之前的訂單狀態
-
-        if (previousOrder == null) {
-            sendOrderNotification(currentOrder); // 新訂單，直接發送通知
-        } else {
-            String currentStatus = (String) currentOrder.get("接單狀況");
-            String previousStatus = (String) previousOrder.get("接單狀況");
-
-            // 如果狀態不為空並且已更改，發送狀態更改通知
-            if (currentStatus != null && !currentStatus.equals(previousStatus)) {
-                sendStatusChangeNotification(currentOrder);
-            }
-
-            Long currentPickupTime = (Long) currentOrder.get("取餐時間");
-            Long previousPickupTime = (Long) previousOrder.get("取餐時間");
-
-            // 如果取餐時間不為空並且已更改，發送取餐時間更改通知
-            if (currentPickupTime != null && !currentPickupTime.equals(previousPickupTime)) {
-                sendPickupTimeChangeNotification(currentOrder);
-            }
-        }
-
-        // 更新保存的訂單狀態
-        previousOrders.put(orderId, currentOrder);
-    }
-
-    // 創建通知頻道
     private void createNotificationChannel() {
-        if (!isAdded()) return; // 確保 Fragment 已附加
+        if (!isAdded()) return; // 檢查 Fragment 是否仍然附加到活動
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             CharSequence name = "Order Notification";
             String description = "Channel for order notifications";
-            int importance = NotificationManager.IMPORTANCE_DEFAULT; // 設置通知重要性
+            int importance = NotificationManager.IMPORTANCE_DEFAULT;
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
             channel.setDescription(description);
 
             NotificationManager notificationManager = requireContext().getSystemService(NotificationManager.class);
-            notificationManager.createNotificationChannel(channel); // 創建通知頻道
+            notificationManager.createNotificationChannel(channel);
         }
     }
 
-    // 發送新訂單通知
     private void sendOrderNotification(Map<String, Object> order) {
-        if (!isAdded()) return; // 確保 Fragment 已附加
+        if (!isAdded()) return; // 檢查 Fragment 是否仍然附加到活動
 
         String orderNumber = "訂單編號: " + order.get("orderNumber");
         String name = "訂購人姓名: " + order.get("名字");
         String timeDifference = "預計取餐時間: " + order.get("differenceInMinutes") + " 分鐘";
         String message = orderNumber + "\n" + name + "\n" + timeDifference;
 
-        sendNotification("有新訂單", message); // 發送通知
+        // 修改：使用唯一的 notificationId 來為每個訂單創建唯一的通知
+        int notificationId = order.get("orderId").hashCode();  // 基於訂單ID生成唯一的通知ID
+
+        sendNotification("有新訂單", message, notificationId);
     }
 
-    // 發送狀態變更通知
-    private void sendStatusChangeNotification(Map<String, Object> order) {
-        if (!isAdded()) return; // 確保 Fragment 已附加
-
-        String orderNumber = "訂單編號: " + order.get("orderNumber");
-        String name = "訂購人姓名: " + order.get("名字");
-        String status = "接單狀況已更新: " + order.get("接單狀況");
-        String message = orderNumber + "\n" + name + "\n" + status;
-
-        sendNotification("接單狀況通知", message); // 發送通知
-    }
-
-    // 發送取餐時間變更通知
-    private void sendPickupTimeChangeNotification(Map<String, Object> order) {
-        if (!isAdded()) return; // 確保 Fragment 已附加
-
-        String orderNumber = "訂單編號: " + order.get("orderNumber");
-        String name = "訂購人姓名: " + order.get("名字");
-        String pickupTimeMessage = "您的訂單取餐時間更改為 " + order.get("取餐時間") + " 分鐘後可以取餐。";
-        String message = orderNumber + "\n" + name + "\n" + pickupTimeMessage;
-
-        sendNotification("取餐通知", message); // 發送通知
-    }
-
-    // 發送通知
-    private void sendNotification(String title, String message) {
-        if (!isAdded()) {
+    private void sendNotification(String title, String message, int notificationId) { // 修改：添加 notificationId 參數
+        if (!isAdded()) { // 檢查 Fragment 是否仍然附加到活動
             Log.w("OrderFragment", "Fragment not attached to context; cannot send notification.");
-            return; // Fragment 未附加，不發送通知
+            return;
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS)
                     != PackageManager.PERMISSION_GRANTED) {
-                return; // 如果沒有通知權限，則不發送通知
+                return;
             }
         }
 
@@ -322,16 +285,16 @@ public class OrderFragment extends Fragment implements OrderAdapter.OnOrderActio
                     .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
             NotificationManagerCompat notificationManager = NotificationManagerCompat.from(requireContext());
-            notificationManager.notify(1, builder.build()); // 發送通知
+            notificationManager.notify(notificationId, builder.build()); // 修改：使用唯一的 notificationId 發送通知
         } catch (SecurityException e) {
-            e.printStackTrace(); // 捕獲並處理安全性異常
+            e.printStackTrace();
         }
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        handler.removeCallbacks(fetchOrdersRunnable); // 清除所有Handler的回調
-        binding = null; // 防止內存泄漏，將綁定設為空
+        handler.removeCallbacks(fetchOrdersRunnable);
+        binding = null;
     }
 }
