@@ -82,11 +82,11 @@
         android:layout_width="303dp"
         android:layout_height="31dp"
         android:layout_margin="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="300dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
         android:text="當日總金額:"
-        android:textColor="#FF0000"
-        android:textSize="20sp"
+        android:textColor="#EC6F6F"
+        android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

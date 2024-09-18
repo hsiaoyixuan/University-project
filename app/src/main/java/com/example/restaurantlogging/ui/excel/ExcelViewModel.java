@@ -1,7 +1,5 @@
 package com.example.restaurantlogging.ui.excel;
 
-import static android.content.ContentValues.TAG;
-
 import android.util.Log;
 
 import androidx.lifecycle.LiveData;
@@ -13,53 +11,44 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class ExcelViewModel extends ViewModel {
 
-    // 持有表格標題的 LiveData
+    // 用來保存表格標題或餐廳名稱的 MutableLiveData
     private final MutableLiveData<String> mText;
 
-    // 持有表格數據的 LiveData
-    private final MutableLiveData<String[][]> mTableData;
-
     public ExcelViewModel() {
+        // 初始化 MutableLiveData
         mText = new MutableLiveData<>();
-        // 獲取當前用戶
+        // 取得當前登入的 Firebase 使用者
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        if (currentUser != null) {
-            String uid = currentUser.getUid();
 
-            // 根據 UID 設置表格標題
+        // 檢查是否有使用者登入
+        if (currentUser != null) {
+            // 取得使用者的 UID
+            String uid = currentUser.getUid();
+            // 根據 UID 設定對應的餐廳名稱
             switch (uid) {
                 case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
+                    // 如果 UID 為指定的，顯示"美琪晨餐館"
                     mText.setValue("美琪晨餐館");
                     break;
                 case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
+                    // 如果 UID 為指定的，顯示"戀茶屋"
                     mText.setValue("戀茶屋");
                     break;
                 default:
-                    Log.w(TAG, "Unknown UID: " + uid);
+                    // 如果 UID 不在已知列表中，則顯示"Unknown Restaurant"
+                    Log.w("ExcelViewModel", "Unknown UID: " + uid);
                     mText.setValue("Unknown Restaurant");
                     break;
             }
         } else {
-            Log.w(TAG, "No current user logged in");
+            // 如果未登入，顯示"Unknown Restaurant"
+            Log.w("ExcelViewModel", "No current user logged in");
             mText.setValue("Unknown Restaurant");
         }
-
-        // 初始化表格數據
-        mTableData = new MutableLiveData<>();
-        mTableData.setValue(new String[][]{
-                {"Header 1", "Header 2", "Header 3"},
-                {"Row 1 Column 1", "Row 1 Column 2", "Row 1 Column 3"},
-                {"Row 2 Column 1", "Row 2 Column 2", "Row 2 Column 3"}
-        });
     }
 
-    // 提供表格標題的 LiveData
+    // 提供 LiveData 給 UI 層使用
     public LiveData<String> getText() {
         return mText;
-    }
-
-    // 提供表格數據的 LiveData
-    public LiveData<String[][]> getTableData() {
-        return mTableData;
     }
 }
