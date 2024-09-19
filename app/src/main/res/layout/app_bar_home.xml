@@ -13,6 +13,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="50dp"
+        android:visibility="invisible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:srcCompat="@android:drawable/ic_dialog_email" />
@@ -23,6 +24,8 @@
         android:layout_height="70dp"
         android:background="?attr/colorPrimary"
         app:popupTheme="@style/Theme.RestaurantLogging.PopupOverlay"
+        app:subtitleTextColor="@color/暖白"
+        app:titleTextColor="@color/暖白"
         tools:layout_editor_absoluteX="1dp"
         tools:layout_editor_absoluteY="5dp" />
 

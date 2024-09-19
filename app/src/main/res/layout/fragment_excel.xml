@@ -85,7 +85,7 @@
         android:layout_marginTop="4dp"
         android:layout_marginEnd="16dp"
         android:text="當日總金額:"
-        android:textColor="#EC6F6F"
+        android:textColor="@color/沉紅"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />

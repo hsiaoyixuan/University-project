@@ -1,6 +1,9 @@
 package com.example.restaurantlogging.ui.order;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -20,6 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 public class OrderDetailsActivity extends AppCompatActivity {
+
+    private TextView tvOrderTime;  // 顯示距離取餐時間的 TextView
+    private Handler handler;
+    private long differenceInMinutes;
+    private long updateInterval = 1000; // 每秒更新一次
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,16 +36,13 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
         TextView tvorderdetails = findViewById(R.id.tv_order_details);
         TextView tvprice = findViewById(R.id.tv_order_price);
-        TextView tvOrderTime = findViewById(R.id.tv_order_time);
+        tvOrderTime = findViewById(R.id.tv_order_time);
         Button btOrderEdit = findViewById(R.id.bt_order_edit);
         Button btOrderFin = findViewById(R.id.bt_order_fin);  // 获取完成订单按钮
 
         // 從 Intent 獲取傳遞過來的訂單數據
         Map<String, Object> order = (Map<String, Object>) getIntent().getSerializableExtra("order");
-        int differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0);
-
-        // 顯示轉換後的正數分鐘在 tvOrderTime 中
-        tvOrderTime.setText(String.format("距離取餐時間: %02d分鐘", differenceInMinutes));
+        differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0);
 
         // 構建訂單詳細信息的 StringBuilder
         StringBuilder details = new StringBuilder();
@@ -55,10 +61,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
         // 將構建的訂單詳細信息設置到 tvOrderDetails
         tvorderdetails.setText(details.toString());
-        tvprice.setText("總計:" + order.get("totalPrice") + "元");
+        tvprice.setText("總計: " + order.get("totalPrice") + "元");
+
+        // 開始更新取餐時間顯示
+        handler = new Handler(Looper.getMainLooper());
+        startUpdatingTime();
 
         // 按鈕點擊事件，顯示編輯時間的對話框
-        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, differenceInMinutes));  // 传递 differenceInMinutes 给 showEditTimeDialog
+        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, (int) differenceInMinutes));
 
         // 完成訂單按鈕點擊事件
         btOrderFin.setOnClickListener(v -> {
@@ -73,6 +83,28 @@ public class OrderDetailsActivity extends AppCompatActivity {
                 }
             });
         });
+    }
+
+    // 開始定時更新取餐時間顯示
+    private void startUpdatingTime() {
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                updatePickupTime();
+                handler.postDelayed(this, updateInterval);  // 每秒更新一次
+            }
+        }, updateInterval);
+    }
+
+    // 更新取餐時間顯示並檢查是否超時
+    private void updatePickupTime() {
+        if (differenceInMinutes > 0) {
+            tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
+            differenceInMinutes--;  // 每秒減少 1 分鐘的計算
+        } else {
+            tvOrderTime.setText("已超過取餐時間");
+            tvOrderTime.setBackgroundColor(Color.RED);  // 超時後背景設置為紅色
+        }
     }
 
     // 顯示編輯時間的對話框
@@ -95,7 +127,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
         numberPickerMinutesUnits.setMaxValue(9);
 
         // 將當前分鐘拆分為十位和個位，並設置到 NumberPicker
-        // 使用 currentMinutes 來設置滾軸初始值，確保顯示與 tv_order_time 相同的數字
         int tens = currentMinutes / 10;
         int units = currentMinutes % 10;
         numberPickerMinutesTens.setValue(tens);
@@ -109,16 +140,13 @@ public class OrderDetailsActivity extends AppCompatActivity {
             int selectedUnits = numberPickerMinutesUnits.getValue();
             int selectedMinutes = selectedTens * 10 + selectedUnits;
 
-            // 更新訂單的取餐時間到 Firebase
+            // 更新 Firebase 的取餐時間和本地顯示
+            differenceInMinutes = selectedMinutes;
             order.put("取餐時間", selectedMinutes);
             DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
-            orderRef.child("取餐時間").setValue(selectedMinutes).addOnCompleteListener(task -> {
+            orderRef.child("differenceInMinutes").setValue(selectedMinutes).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新成功", Toast.LENGTH_SHORT).show();
-
-                    // 更新 UI 中的取餐時間
-                    TextView tvOrderTime = findViewById(R.id.tv_order_time);
-                    tvOrderTime.setText(String.format("距離取餐時間: %02d分鐘", selectedMinutes));
                 } else {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新失敗", Toast.LENGTH_SHORT).show();
                 }
@@ -130,4 +158,9 @@ public class OrderDetailsActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);  // 停止定時任務
+    }
 }

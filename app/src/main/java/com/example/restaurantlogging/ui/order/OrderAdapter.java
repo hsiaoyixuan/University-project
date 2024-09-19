@@ -2,6 +2,7 @@ package com.example.restaurantlogging.ui.order;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,6 +15,7 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 import com.example.restaurantlogging.R;
 
@@ -45,15 +47,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
-        Map<String, Object> order = filteredOrderList.get(position); // 仅获取筛选后的订单
+        Map<String, Object> order = filteredOrderList.get(position); // 只顯示篩選後的訂單
 
-        holder.itemView.setVisibility(View.VISIBLE); // 仅显示符合条件的订单项
+        holder.itemView.setVisibility(View.VISIBLE);
         holder.textViewOrderItem.setText((String) order.get("名字"));
         holder.textViewOrderDate.setText((String) order.get("readableDate"));
 
-        String orderNumber = (String) order.get("orderNumber"); // 获取订单编号
+        String orderNumber = (String) order.get("orderNumber"); // 獲取訂單編號
         if (orderNumber != null) {
-            holder.textViewOrderNum.setText("#" + orderNumber); // 显示订单编号
+            holder.textViewOrderNum.setText("#" + orderNumber); // 顯示訂單編號
         }
 
         Long differenceInMinutes = (Long) order.get("differenceInMinutes");
@@ -61,13 +63,31 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
 
         holder.textViewOrderTime.setText("距離取餐時間: " + minutes + "分鐘\n" + (String) order.get("readableDate1"));
 
-        // 设置接受和拒绝按钮的可见性
+        // 設定接受和拒絕按鈕的可見性
         if ("pending".equals(filterType) || "delayed".equals(filterType)) {
             holder.buttonAccept.setVisibility(View.VISIBLE);
             holder.buttonReject.setVisibility(View.VISIBLE);
         } else {
             holder.buttonAccept.setVisibility(View.GONE);
             holder.buttonReject.setVisibility(View.GONE);
+        }
+
+        // 計算訂單日期加上距離取餐時間的總和
+        String orderDateStr = (String) order.get("readableDate"); // 訂單日期
+        Long orderTimestamp = (Long) order.get("timestamp"); // 訂單時間戳
+        if (orderTimestamp != null && differenceInMinutes != null) {
+            // 將訂單時間戳加上取餐時間差轉換為最終取餐時間
+            long pickupTimeInMillis = orderTimestamp + (differenceInMinutes * 60 * 1000);
+
+            // 獲取當前時間
+            long currentTimeInMillis = System.currentTimeMillis();
+
+            // 如果最終取餐時間已經超過現在時間，將訂單編號設為紅色
+            if (pickupTimeInMillis < currentTimeInMillis) {
+                holder.textViewOrderNum.setTextColor(ContextCompat.getColor(holder.itemView.getContext(), R.color.chart4)); // 取得解析後的顏色
+            } else {
+                holder.textViewOrderNum.setTextColor(Color.BLACK); // 否則為正常黑色
+            }
         }
 
         holder.itemView.setOnClickListener(v -> {
