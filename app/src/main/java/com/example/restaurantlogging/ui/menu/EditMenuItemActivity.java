@@ -71,7 +71,11 @@ public class EditMenuItemActivity extends AppCompatActivity {
 
         // 初始化Firebase Storage引用
         storageReference = FirebaseStorage.getInstance().getReference();
-        menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館/食物");
+        // 從Intent傳遞過來的數據中獲取菜單路徑
+        String menuPath = getIntent().getStringExtra("menuPath");  // 獲取傳遞過來的菜單路徑
+        if (menuPath != null) {
+            menuRef = FirebaseDatabase.getInstance().getReference(menuPath); // 根據傳遞過來的路徑初始化menuRef
+        }
 
         // 初始化UI组件
         nameTextView = findViewById(R.id.textViewName);
@@ -88,10 +92,7 @@ public class EditMenuItemActivity extends AppCompatActivity {
         imageView = findViewById(R.id.firebaseimage);
         Button changeImageButton = findViewById(R.id.change_btn);
         closeSwitch = findViewById(R.id.switch1);
-        p_rice = findViewById(R.id.p_rice);
-        p_noodles = findViewById(R.id.p_noodles);
-        p_cheese = findViewById(R.id.p_cheese);
-        p_shacha = findViewById(R.id.p_shacha);
+
 
         // 从SharedPreferences读取Switch状态，默认值为false
         SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
@@ -115,8 +116,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
             }
         });
 
-        // 加载CheckBox状态
-        loadCheckBoxStates();
 
         // 获取从Intent传递过来的数据
         itemName = getIntent().getStringExtra("itemName");
@@ -204,8 +203,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
             }
         });
 
-        // 加载CheckBox状态
-        loadCheckBoxStates();
     }
 
     // 从详细信息中提取特定键的值
@@ -360,22 +357,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
             itemRef.child(photo).setValue(imageUrl);
         }
 
-        // 檢查並儲存勾選的 CheckBox 的文字到 Firebase
-        if (p_rice.isChecked()) {
-            itemRef.child(plus).child("飯").setValue(10); // 儲存"米飯"選項
-        }
-        if (p_noodles.isChecked()) {
-            itemRef.child(plus).child("麵").setValue(10); // 儲存"麵條"選項
-        }
-        if (p_cheese.isChecked()) {
-            itemRef.child(plus).child("起司").setValue(5); // 儲存"起司"選項
-        }
-        if (p_shacha.isChecked()) {
-            itemRef.child(plus).child("沙茶").setValue(0);
-        }
-
-        // 保存CheckBox状态到SharedPreferences
-        saveCheckBoxStates();
 
         Toast.makeText(this, "操作成功", Toast.LENGTH_SHORT).show();
         finish();
@@ -410,23 +391,5 @@ public class EditMenuItemActivity extends AppCompatActivity {
         });
     }
 
-    // 保存CheckBox状态到SharedPreferences
-    private void saveCheckBoxStates() {
-        SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("p_rice", p_rice.isChecked());
-        editor.putBoolean("p_noodles", p_noodles.isChecked());
-        editor.putBoolean("p_cheese", p_cheese.isChecked());
-        editor.putBoolean("p_shacha", p_shacha.isChecked());
-        editor.apply();
-    }
 
-    // 加载CheckBox状态
-    private void loadCheckBoxStates() {
-        SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-        p_rice.setChecked(sharedPreferences.getBoolean("p_rice", false));
-        p_noodles.setChecked(sharedPreferences.getBoolean("p_noodles", false));
-        p_cheese.setChecked(sharedPreferences.getBoolean("p_cheese", false));
-        p_shacha.setChecked(sharedPreferences.getBoolean("p_shacha", false));
-    }
 }

@@ -29,7 +29,9 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MenuFragment extends Fragment {
     private FragmentMenuBinding binding;
@@ -38,6 +40,9 @@ public class MenuFragment extends Fragment {
     private RecyclerView recyclerView;
     private MenuAdapter menuAdapter;
     private List<MenuItem> menuItemList;
+
+    // 使用Map来存储UID与路径的映射
+    private Map<String, String> uidToMenuPathMap;
 
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
@@ -56,24 +61,34 @@ public class MenuFragment extends Fragment {
         menuAdapter = new MenuAdapter(getContext(), menuItemList);// 传递上下文
         recyclerView.setAdapter(menuAdapter);
 
+        // 初始化UID与菜单路径的映射
+        initializeUidToMenuPathMap();
 
+        // 获取菜单项
         getMenuItems();
+
         return root;
+    }
 
-
+    // 初始化 UID 对应路径的 Map
+    private void initializeUidToMenuPathMap() {
+        uidToMenuPathMap = new HashMap<>();
+        uidToMenuPathMap.put("hhDjGejvu3bGzaoBAe7ymIGJjqP2", "校區/屏商校區/美琪晨餐館/食物");
+        uidToMenuPathMap.put("XlIoYWkELHR8gytiJYx7EF6rNHr2", "校區/屏師校區/戀茶屋/食物");
+        // 可以在此处继续添加更多UID与路径的映射
     }
 
     public void getMenuItems() {
         // 獲取當前用戶
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
-        String uid = currentUser.getUid();
+        String uid = currentUser != null ? currentUser.getUid() : null;  // 如果用户已登录，获取其 UID
 
-        if (uid.equals("hhDjGejvu3bGzaoBAe7ymIGJjqP2")) {
-            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館/食物");
-        } else if (uid.equals("XlIoYWkELHR8gytiJYx7EF6rNHr2")) {
-            menuRef = FirebaseDatabase.getInstance().getReference("校區/屏師校區/戀茶屋/食物");
+        // 根據用戶的 UID 獲取對應的菜單路徑
+        if (uid != null && uidToMenuPathMap.containsKey(uid)) {
+            String menuPath = uidToMenuPathMap.get(uid);
+            menuRef = FirebaseDatabase.getInstance().getReference(menuPath);
         } else {
-            Log.w(TAG, "Unknown UID: " + uid);
+            Log.w(TAG, "Unknown UID or no mapping found for UID: " + uid);
             return;
         }
 

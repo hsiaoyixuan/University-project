@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.restaurantlogging.databinding.ActivityHomeBinding;
 
+import java.util.Calendar;
+
 public class home extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
@@ -47,7 +49,7 @@ public class home extends AppCompatActivity {
         NavigationView navigationView = binding.navView;
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_historicalorders, R.id.nav_excel, R.id.nav_menu, R.id.nav_service, R.id.nav_order, R.id.nav_logout)
+                R.id.nav_historicalorders, R.id.nav_excel, R.id.nav_menu, R.id.nav_order, R.id.nav_logout)
                 .setOpenableLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_home);
@@ -74,20 +76,37 @@ public class home extends AppCompatActivity {
 
     private String setRestaurantInfo(String uid) {
         String restaurantName;
+        Calendar calendar = Calendar.getInstance();
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+        boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+
         switch (uid) {
             case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
                 restaurantname.setText("美琪晨餐館");
-                opentime.setText("營業時間: 08:00 - 22:00");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
                 restaurantName = "美琪晨餐館";  // 返回餐廳名稱
                 break;
             case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
                 restaurantname.setText("戀茶屋");
-                opentime.setText("營業時間: 09:00 - 21:00");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
                 restaurantName = "戀茶屋";  // 返回餐廳名稱
                 break;
             case "UID3":
                 restaurantname.setText("餐廳名稱 C");
-                opentime.setText("營業時間: 10:00 - 20:00");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 10:00 - 20:00");
+                }
                 restaurantName = "餐廳名稱 C";  // 返回餐廳名稱
                 break;
             default:

@@ -237,37 +237,9 @@
             android:id="@+id/firebaseimage"
             android:layout_width="641dp"
             android:layout_height="366dp"
+            android:layout_marginTop="50dp"
             tools:srcCompat="@drawable/ic_menu_camera" />
 
-        <TextView
-            android:id="@+id/textView"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="加料區" />
-
-        <CheckBox
-            android:id="@+id/p_rice"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="加飯" />
-
-        <CheckBox
-            android:id="@+id/p_noodles"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="加麵" />
-
-        <CheckBox
-            android:id="@+id/p_cheese"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="加起司" />
-
-        <CheckBox
-            android:id="@+id/p_shacha"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="加沙茶" />
     </LinearLayout>
 
 
