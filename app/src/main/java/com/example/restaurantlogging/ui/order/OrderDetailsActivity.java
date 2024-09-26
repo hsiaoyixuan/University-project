@@ -26,7 +26,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     private TextView tvOrderTime;  // 顯示距離取餐時間的 TextView
     private Handler handler;
-    private long differenceInMinutes;
     private long updateInterval = 60000; // 每分鐘更新一次
 
     @Override
@@ -43,7 +42,11 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
         // 從 Intent 獲取傳遞過來的訂單數據
         Map<String, Object> order = (Map<String, Object>) getIntent().getSerializableExtra("order");
-        differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0); // 從 Intent 獲取差值分鐘數
+
+        // 獲取訂單中的 timestamp（取餐時間）
+        long pickupTimestamp = (long) order.get("timestamp");
+
+        startUpdatingTime(pickupTimestamp);  // 開始倒數計時
 
         // 構建訂單詳細信息的 StringBuilder
         StringBuilder details = new StringBuilder();
@@ -71,12 +74,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
         tvOrderDetails.setText(details.toString());
         tvPrice.setText("總計: " + order.get("totalPrice") + "元");
 
-        // 開始顯示和更新取餐時間
-        handler = new Handler(Looper.getMainLooper());
-        startUpdatingTime();  // 確保在進入畫面時開始倒數
-
         // 編輯取餐時間按鈕
-        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, (int) differenceInMinutes));
+        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, (int) (pickupTimestamp - System.currentTimeMillis()) / (60 * 1000), pickupTimestamp));
 
         // 完成訂單按鈕點擊事件
         btOrderFin.setOnClickListener(v -> {
@@ -94,41 +93,44 @@ public class OrderDetailsActivity extends AppCompatActivity {
     }
 
     // 開始定時更新取餐時間顯示
-    private void startUpdatingTime() {
-        updatePickupTime(); // 立即顯示時間
+    private void startUpdatingTime(long pickupTimestamp) {
+        updatePickupTime(pickupTimestamp);  // 立即顯示時間
+        handler = new Handler(Looper.getMainLooper());  // 確保在更新時運行在主線程上
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                updatePickupTime();
+                updatePickupTime(pickupTimestamp);
                 handler.postDelayed(this, updateInterval);  // 每分鐘更新一次
             }
         }, updateInterval);
     }
 
-    // 更新取餐時間顯示並檢查是否超時
-    private void updatePickupTime() {
+    private void updatePickupTime(long pickupTimestamp) {
+        long currentTime = System.currentTimeMillis();  // 當前時間戳
+        long differenceInMillis = pickupTimestamp - currentTime;  // 取餐時間與當前時間的差值（毫秒）
+        long differenceInMinutes = differenceInMillis / (60 * 1000);  // 將差值轉換為分鐘
+
         if (differenceInMinutes > 0) {
-            if (differenceInMinutes >= 1440) {  // 1440 分鐘 = 1 天
-                long days = differenceInMinutes / 1440;  // 計算天數
-                long remainingMinutes = differenceInMinutes % 1440;  // 剩餘分鐘數
+            if (differenceInMinutes >= 1440) {  // 超過1天
+                long days = differenceInMinutes / 1440;
+                long remainingMinutes = differenceInMinutes % 1440;
                 tvOrderTime.setText(String.format("距離取餐時間: %d 天 %02d 小時", days, remainingMinutes / 60));
             } else if (differenceInMinutes >= 60) {
-                long hours = differenceInMinutes / 60;  // 計算小時數
-                long remainingMinutes = differenceInMinutes % 60;  // 剩餘分鐘數
+                long hours = differenceInMinutes / 60;
+                long remainingMinutes = differenceInMinutes % 60;
                 tvOrderTime.setText(String.format("距離取餐時間: %02d 小時 %02d 分鐘", hours, remainingMinutes));
             } else {
                 tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
             }
-            differenceInMinutes--;  // 每次更新後減少 1 分鐘
+            tvOrderTime.setTextColor(Color.BLACK);  // 正常顯示為黑色
         } else {
             tvOrderTime.setText("已超過取餐時間");
-            tvOrderTime.setTextColor(Color.RED);  // 超時後背景設置為紅色
+            tvOrderTime.setTextColor(Color.RED);  // 超時後設為紅色
         }
     }
 
-
     // 顯示編輯時間的對話框
-    private void showEditTimeDialog(Map<String, Object> order, int currentMinutes) {
+    private void showEditTimeDialog(Map<String, Object> order, int currentMinutes, long originalTimestamp) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_edit_time, null);
@@ -160,13 +162,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
             int selectedUnits = numberPickerMinutesUnits.getValue();
             int selectedMinutes = selectedTens * 10 + selectedUnits;
 
-            // 更新 Firebase 的取餐時間和本地顯示
-            differenceInMinutes = selectedMinutes;
-            order.put("取餐時間", selectedMinutes);
+            // 更新 Firebase 的取餐時間和本地顯示，將選擇的分鐘數加到原有的取餐時間上
+            long updatedTimestamp = originalTimestamp + selectedMinutes * 60 * 1000; // 在原始取餐時間基礎上加上選中的分鐘數
+            order.put("timestamp", updatedTimestamp);
             DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
-            orderRef.child("differenceInMinutes").setValue(selectedMinutes).addOnCompleteListener(task -> {
+            orderRef.child("timestamp").setValue(updatedTimestamp).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新成功", Toast.LENGTH_SHORT).show();
+                    startUpdatingTime(updatedTimestamp);  // 更新倒數計時
                 } else {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新失敗", Toast.LENGTH_SHORT).show();
                 }
@@ -184,4 +187,5 @@ public class OrderDetailsActivity extends AppCompatActivity {
         handler.removeCallbacksAndMessages(null);  // 停止定時任務
     }
 }
+
 
