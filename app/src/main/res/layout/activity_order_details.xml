@@ -8,35 +8,51 @@
 
     <TextView
         android:id="@+id/tv_order"
-        android:layout_width="509dp"
-        android:layout_height="86dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="32dp"
+        android:layout_width="1373dp"
+        android:layout_height="124dp"
+        android:background="@color/崎紅"
         android:text="訂單明細"
+        android:gravity="start|center_vertical"
+        android:textColor="@color/暖白"
         android:textSize="24sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/tv_order_time"
-        android:layout_width="286dp"
+        android:layout_width="342dp"
         android:layout_height="57dp"
-        android:layout_marginTop="120dp"
+        android:layout_marginTop="145dp"
         android:layout_marginEnd="76dp"
         android:text="距離取餐時間:"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/tv_order_details"
-        android:layout_width="822dp"
-        android:layout_height="396dp"
-        android:layout_marginStart="244dp"
-        android:layout_marginTop="212dp"
-        android:text="TextView"
+    <!-- CardView 替換 tv_order_details -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view_order_details"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        app:cardCornerRadius="8dp"
+        app:cardElevation="4dp"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_order_time">
+
+        <TextView
+            android:id="@+id/tv_order_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:text="訂單詳情"
+            android:textSize="16sp"
+            tools:text="Sample order details will be shown here." />
+    </androidx.cardview.widget.CardView>
 
     <TextView
         android:id="@+id/tv_order_price"
@@ -68,4 +84,5 @@
         android:text="完成訂單"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

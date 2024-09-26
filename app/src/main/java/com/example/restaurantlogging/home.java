@@ -83,7 +83,8 @@ public class home extends AppCompatActivity {
 
         switch (uid) {
             case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
-                restaurantname.setText("美琪晨餐館");
+                //restaurantname.setText("美琪晨餐館");
+                restaurantname.setText("餐廳一號");
                 if (isWeekend) {
                     opentime.setText("假日營業時間 10:00~14:00");
                 } else {
@@ -92,7 +93,8 @@ public class home extends AppCompatActivity {
                 restaurantName = "美琪晨餐館";  // 返回餐廳名稱
                 break;
             case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
-                restaurantname.setText("戀茶屋");
+                //restaurantname.setText("戀茶屋");
+                restaurantname.setText("餐廳二號");
                 if (isWeekend) {
                     opentime.setText("假日營業時間 10:00~14:00");
                 } else {

@@ -49,19 +49,19 @@ public class ExcelFragment extends Fragment {
 
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        // 使用 ViewBinding 初始化視圖
         binding = FragmentExcelBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
-        // 取得 ExcelViewModel 中的餐廳名稱
+        // 取得 ExcelViewModel 中的顯示名稱與實際名稱
         ExcelViewModel excelViewModel = new ViewModelProvider(this).get(ExcelViewModel.class);
-        excelViewModel.getText().observe(getViewLifecycleOwner(), restaurantName -> {
-            // 顯示對應的餐廳名稱
+        excelViewModel.getDisplayName().observe(getViewLifecycleOwner(), restaurantName -> {
+            // 顯示對應的餐廳名稱（餐廳一號或餐廳二號）
             binding.rsName.setText(restaurantName);
-            // 根據選擇的日期和餐廳名稱載入該日期的訂單數據（表格和圓餅圖）
-            fetchOrdersData(binding.tableLayout, selectedDate, restaurantName);  // 表格和圓餅圖依照選擇日期
-            // 根據當前日期載入該週的銷售數據（長條圖）
-            fetchWeeklySalesData(restaurantName);  // 長條圖顯示一週的銷售額
+
+            // 使用實際餐廳名稱進行資料查詢和顯示
+            String actualRestaurantName = excelViewModel.getRestaurantName();
+            fetchOrdersData(binding.tableLayout, selectedDate, actualRestaurantName);  // 表格和圓餅圖依照選擇日期
+            fetchWeeklySalesData(actualRestaurantName);  // 長條圖顯示一週的銷售額
         });
 
         // 初始化 UI 元件
@@ -76,21 +76,31 @@ public class ExcelFragment extends Fragment {
         showTable(tableScrollView, pieChart, barChart);
 
         // 表格模式按鈕點擊事件
-        btnShowTable.setOnClickListener(v -> showTable(tableScrollView, pieChart, barChart));
+        btnShowTable.setOnClickListener(v -> {
+            showTable(tableScrollView, pieChart, barChart);
+        });
 
         // 圓餅圖模式按鈕點擊事件
-        btnShowPieChart.setOnClickListener(v -> showPieChart(tableScrollView, pieChart, barChart));
+        btnShowPieChart.setOnClickListener(v -> {
+            showPieChart(tableScrollView, pieChart, barChart);
+            // 確保圓餅圖刷新
+            fetchOrdersData(binding.tableLayout, selectedDate, excelViewModel.getRestaurantName());
+        });
 
         // 長條圖模式按鈕點擊事件
-        btnShowBarChart.setOnClickListener(v -> showBarChart(tableScrollView, pieChart, barChart));
+        btnShowBarChart.setOnClickListener(v -> {
+            showBarChart(tableScrollView, pieChart, barChart);
+            // 確保長條圖刷新
+            fetchWeeklySalesData(excelViewModel.getRestaurantName());
+        });
 
         // 設置當前日期並加載數據
         setDateToToday();
-
         binding.btnSelectDate.setOnClickListener(v -> onSelectDateClicked());
 
         return root;
     }
+
 
     // 設置今天的日期並設定當週開始日
     private void setDateToToday() {

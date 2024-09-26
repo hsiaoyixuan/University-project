@@ -11,44 +11,49 @@ import com.google.firebase.auth.FirebaseUser;
 
 public class ExcelViewModel extends ViewModel {
 
-    // 用來保存表格標題或餐廳名稱的 MutableLiveData
-    private final MutableLiveData<String> mText;
+    // 用來保存表格顯示的名稱
+    private final MutableLiveData<String> displayName;
+    // 用來保存實際的餐廳名稱
+    private String restaurantName;
 
     public ExcelViewModel() {
-        // 初始化 MutableLiveData
-        mText = new MutableLiveData<>();
-        // 取得當前登入的 Firebase 使用者
+        displayName = new MutableLiveData<>();
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
-        // 檢查是否有使用者登入
         if (currentUser != null) {
-            // 取得使用者的 UID
             String uid = currentUser.getUid();
-            // 根據 UID 設定對應的餐廳名稱
             switch (uid) {
                 case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
-                    // 如果 UID 為指定的，顯示"美琪晨餐館"
-                    mText.setValue("美琪晨餐館");
+                    // 顯示為「餐廳一號」，實際餐廳名稱為「美琪晨餐館」
+                    displayName.setValue("餐廳一號");
+                    restaurantName = "美琪晨餐館";
                     break;
                 case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
-                    // 如果 UID 為指定的，顯示"戀茶屋"
-                    mText.setValue("戀茶屋");
+                    // 顯示為「餐廳二號」，實際餐廳名稱為「戀茶屋」
+                    displayName.setValue("餐廳二號");
+                    restaurantName = "戀茶屋";
                     break;
                 default:
-                    // 如果 UID 不在已知列表中，則顯示"Unknown Restaurant"
                     Log.w("ExcelViewModel", "Unknown UID: " + uid);
-                    mText.setValue("Unknown Restaurant");
+                    displayName.setValue("Unknown Restaurant");
+                    restaurantName = "Unknown Restaurant";
                     break;
             }
         } else {
-            // 如果未登入，顯示"Unknown Restaurant"
             Log.w("ExcelViewModel", "No current user logged in");
-            mText.setValue("Unknown Restaurant");
+            displayName.setValue("Unknown Restaurant");
+            restaurantName = "Unknown Restaurant";
         }
     }
 
-    // 提供 LiveData 給 UI 層使用
-    public LiveData<String> getText() {
-        return mText;
+    // 提供顯示名稱給 UI 層使用
+    public LiveData<String> getDisplayName() {
+        return displayName;
+    }
+
+    // 提供實際餐廳名稱用於資料查詢等操作
+    public String getRestaurantName() {
+        return restaurantName;
     }
 }
+

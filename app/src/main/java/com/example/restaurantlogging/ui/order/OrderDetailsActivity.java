@@ -27,26 +27,34 @@ public class OrderDetailsActivity extends AppCompatActivity {
     private TextView tvOrderTime;  // 顯示距離取餐時間的 TextView
     private Handler handler;
     private long differenceInMinutes;
-    private long updateInterval = 1000; // 每秒更新一次
+    private long updateInterval = 60000; // 每分鐘更新一次
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_details);
 
-        TextView tvorderdetails = findViewById(R.id.tv_order_details);
-        TextView tvprice = findViewById(R.id.tv_order_price);
+        TextView tvOrder = findViewById(R.id.tv_order);
+        TextView tvOrderDetails = findViewById(R.id.tv_order_details);
+        TextView tvPrice = findViewById(R.id.tv_order_price);
         tvOrderTime = findViewById(R.id.tv_order_time);
         Button btOrderEdit = findViewById(R.id.bt_order_edit);
         Button btOrderFin = findViewById(R.id.bt_order_fin);  // 获取完成订单按钮
 
         // 從 Intent 獲取傳遞過來的訂單數據
         Map<String, Object> order = (Map<String, Object>) getIntent().getSerializableExtra("order");
-        differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0);
+        differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0); // 從 Intent 獲取差值分鐘數
 
         // 構建訂單詳細信息的 StringBuilder
         StringBuilder details = new StringBuilder();
-        StringBuilder price = new StringBuilder();
+
+        // 獲取訂單編號
+        String orderNumber = (String) order.get("orderNumber");
+        if (orderNumber != null) {
+            tvOrder.setText("#" + orderNumber + " 訂單明細");
+        } else {
+            tvOrder.setText("訂單明細"); // 如果没有订单编号，使用默认的文本
+        }
 
         // 獲取訂單中的 itemList
         List<Map<String, Object>> itemList = (List<Map<String, Object>>) order.get("items");
@@ -60,14 +68,14 @@ public class OrderDetailsActivity extends AppCompatActivity {
         }
 
         // 將構建的訂單詳細信息設置到 tvOrderDetails
-        tvorderdetails.setText(details.toString());
-        tvprice.setText("總計: " + order.get("totalPrice") + "元");
+        tvOrderDetails.setText(details.toString());
+        tvPrice.setText("總計: " + order.get("totalPrice") + "元");
 
-        // 開始更新取餐時間顯示
+        // 開始顯示和更新取餐時間
         handler = new Handler(Looper.getMainLooper());
-        startUpdatingTime();
+        startUpdatingTime();  // 確保在進入畫面時開始倒數
 
-        // 按鈕點擊事件，顯示編輯時間的對話框
+        // 編輯取餐時間按鈕
         btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, (int) differenceInMinutes));
 
         // 完成訂單按鈕點擊事件
@@ -87,11 +95,12 @@ public class OrderDetailsActivity extends AppCompatActivity {
 
     // 開始定時更新取餐時間顯示
     private void startUpdatingTime() {
+        updatePickupTime(); // 立即顯示時間
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 updatePickupTime();
-                handler.postDelayed(this, updateInterval);  // 每秒更新一次
+                handler.postDelayed(this, updateInterval);  // 每分鐘更新一次
             }
         }, updateInterval);
     }
@@ -99,13 +108,24 @@ public class OrderDetailsActivity extends AppCompatActivity {
     // 更新取餐時間顯示並檢查是否超時
     private void updatePickupTime() {
         if (differenceInMinutes > 0) {
-            tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
-            differenceInMinutes--;  // 每秒減少 1 分鐘的計算
+            if (differenceInMinutes >= 1440) {  // 1440 分鐘 = 1 天
+                long days = differenceInMinutes / 1440;  // 計算天數
+                long remainingMinutes = differenceInMinutes % 1440;  // 剩餘分鐘數
+                tvOrderTime.setText(String.format("距離取餐時間: %d 天 %02d 小時", days, remainingMinutes / 60));
+            } else if (differenceInMinutes >= 60) {
+                long hours = differenceInMinutes / 60;  // 計算小時數
+                long remainingMinutes = differenceInMinutes % 60;  // 剩餘分鐘數
+                tvOrderTime.setText(String.format("距離取餐時間: %02d 小時 %02d 分鐘", hours, remainingMinutes));
+            } else {
+                tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
+            }
+            differenceInMinutes--;  // 每次更新後減少 1 分鐘
         } else {
             tvOrderTime.setText("已超過取餐時間");
-            tvOrderTime.setBackgroundColor(Color.RED);  // 超時後背景設置為紅色
+            tvOrderTime.setTextColor(Color.RED);  // 超時後背景設置為紅色
         }
     }
+
 
     // 顯示編輯時間的對話框
     private void showEditTimeDialog(Map<String, Object> order, int currentMinutes) {
@@ -164,3 +184,4 @@ public class OrderDetailsActivity extends AppCompatActivity {
         handler.removeCallbacksAndMessages(null);  // 停止定時任務
     }
 }
+

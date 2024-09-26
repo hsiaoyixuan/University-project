@@ -38,8 +38,8 @@
         android:id="@+id/btn_select_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="-10dp"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="12dp"
         android:text="選擇日期"
         app:layout_constraintStart_toEndOf="@+id/date"
         app:layout_constraintTop_toTopOf="parent" />
@@ -130,15 +130,14 @@
 
         <com.github.mikephil.charting.charts.PieChart
             android:id="@+id/pie_chart"
-            android:layout_width="1175dp"
-            android:layout_height="453dp"
-            android:visibility="gone"
+            android:layout_width="1148dp"
+            android:layout_height="463dp"
             tools:visibility="visible" />
 
         <com.github.mikephil.charting.charts.BarChart
             android:id="@+id/bar_chart"
-            android:layout_width="1180dp"
-            android:layout_height="452dp"
+            android:layout_width="1210dp"
+            android:layout_height="523dp"
             android:visibility="gone"
             tools:visibility="visible" />
     </FrameLayout>

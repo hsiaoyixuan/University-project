@@ -20,27 +20,27 @@
             android:padding="16dp">
 
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="905dp"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
                 android:layout_weight="2"
+                android:orientation="vertical"
                 android:paddingEnd="16dp">
 
                 <TextView
                     android:id="@+id/order_num"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:paddingBottom="4dp"
                     android:text="Order Number"
-                    android:textSize="16sp"
-                    android:paddingBottom="4dp" />
+                    android:textSize="16sp" />
 
                 <TextView
                     android:id="@+id/text_view_order_item"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:paddingBottom="4dp"
                     android:text="Name"
-                    android:textSize="14sp"
-                    android:paddingBottom="4dp" />
+                    android:textSize="14sp" />
 
                 <TextView
                     android:id="@+id/text_view_order_date"
@@ -52,12 +52,12 @@
 
             <TextView
                 android:id="@+id/text_view_order_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="410dp"
+                android:layout_height="83dp"
                 android:layout_gravity="center_vertical"
+                android:paddingEnd="16dp"
                 android:text="取餐時間:"
-                android:textSize="14sp"
-                android:paddingEnd="16dp" />
+                android:textSize="14sp" />
 
             <LinearLayout
                 android:layout_width="wrap_content"
