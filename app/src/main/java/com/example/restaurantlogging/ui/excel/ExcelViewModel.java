@@ -25,13 +25,17 @@ public class ExcelViewModel extends ViewModel {
             switch (uid) {
                 case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
                     // 顯示為「餐廳一號」，實際餐廳名稱為「美琪晨餐館」
-                    displayName.setValue("餐廳一號");
+                    displayName.setValue("美琪晨餐館");
                     restaurantName = "美琪晨餐館";
                     break;
                 case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
                     // 顯示為「餐廳二號」，實際餐廳名稱為「戀茶屋」
-                    displayName.setValue("餐廳二號");
+                    displayName.setValue("戀茶屋");
                     restaurantName = "戀茶屋";
+                    break;
+                case "sPoPsuMvvafICGhTtFzfkwlYHkQ2":
+                    displayName.setValue("MINI小晨堡");
+                    restaurantName = "MINI小晨堡";
                     break;
                 default:
                     Log.w("ExcelViewModel", "Unknown UID: " + uid);

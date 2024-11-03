@@ -155,6 +155,7 @@ public class EditMenuItemActivity extends AppCompatActivity {
             showConfirmDialog();
         });
 
+
         deleteButton.setOnClickListener(v -> {
             pendingAction = "delete";
             showConfirmDialog();
@@ -325,7 +326,7 @@ public class EditMenuItemActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 保存或更新菜单项到Firebase
+    // 保存或更新菜单项内容到Firebase
     private void saveMenuItem() {
         String chinese = chineseEditText.getText().toString();
         float price = Float.parseFloat(numberEditText.getText().toString());
@@ -334,53 +335,41 @@ public class EditMenuItemActivity extends AppCompatActivity {
         float sugar = Float.parseFloat(sugarEditText.getText().toString());
         float total_crab = Float.parseFloat(totalCrabEditText.getText().toString());
         float fat = Float.parseFloat(fatEditText.getText().toString());
-        String name = chinese;
-        String desprice = "價格";
-        String descal = "熱量";
-        String desprotein = "蛋白質";
-        String dessugar = "糖";
-        String destoatl_crab = "碳水化合物";
-        String desfat = "脂肪";
-        String photo = "照片";
-        String plus = "加料";
 
-        DatabaseReference itemRef = menuRef.child(itemName).child(name);
-        itemRef.child(desprice).setValue(price);
-        itemRef.child(descal).setValue(cal);
-        itemRef.child(desprotein).setValue(protein);
-        itemRef.child(dessugar).setValue(sugar);
-        itemRef.child(destoatl_crab).setValue(total_crab);
-        itemRef.child(desfat).setValue(fat);
+        DatabaseReference itemRef = menuRef.child(itemName).child(chinese); // 保持在相同的节点
+        itemRef.child("價格").setValue(price);
+        itemRef.child("熱量").setValue(cal);
+        itemRef.child("蛋白質").setValue(protein);
+        itemRef.child("糖").setValue(sugar);
+        itemRef.child("碳水化合物").setValue(total_crab);
+        itemRef.child("脂肪").setValue(fat);
 
-        // 确保图片URL被保存
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            itemRef.child(photo).setValue(imageUrl);
+            itemRef.child("照片").setValue(imageUrl); // 更新图片URL
         }
-
 
         Toast.makeText(this, "操作成功", Toast.LENGTH_SHORT).show();
         finish();
     }
 
-    // 删除菜单项
     private void deleteMenuItem() {
         String chinese = chineseEditText.getText().toString();
-        String name = chinese;
-        menuRef.child(itemName).child(name).removeValue();
-        Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
-        finish();
+        menuRef.child(itemName).child(chinese).removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "删除失败", Toast.LENGTH_SHORT).show());
     }
 
-    // 从Firebase加载照片并显示在ImageView中
     private void loadPhotoFromFirebase() {
         String chinese = chineseEditText.getText().toString();
-        String name = chinese;
-        menuRef.child(itemName).child(name).child("照片").addListenerForSingleValueEvent(new ValueEventListener() {
+        menuRef.child(itemName).child(chinese).child("照片").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                imageUrl = snapshot.getValue(String.class); // 获取图片URL
+                imageUrl = snapshot.getValue(String.class);
                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                    Picasso.get().load(imageUrl).into(imageView); // 显示图片
+                    Picasso.get().load(imageUrl).into(imageView);
                 }
             }
 
@@ -390,6 +379,4 @@ public class EditMenuItemActivity extends AppCompatActivity {
             }
         });
     }
-
-
 }

@@ -75,6 +75,7 @@ public class MenuFragment extends Fragment {
         uidToMenuPathMap = new HashMap<>();
         uidToMenuPathMap.put("hhDjGejvu3bGzaoBAe7ymIGJjqP2", "校區/屏商校區/美琪晨餐館/食物");
         uidToMenuPathMap.put("XlIoYWkELHR8gytiJYx7EF6rNHr2", "校區/屏師校區/戀茶屋/食物");
+        uidToMenuPathMap.put("sPoPsuMvvafICGhTtFzfkwlYHkQ2", "校區/民生校區/MINI小晨堡/食物");
         // 可以在此处继续添加更多UID与路径的映射
     }
 

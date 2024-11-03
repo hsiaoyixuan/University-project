@@ -9,23 +9,23 @@ import android.widget.ListView;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
-import androidx.appcompat.app.AlertDialog;
 import com.example.restaurantlogging.databinding.FragmentHistoricalOrdersBinding;
-import java.util.HashMap;
+import com.google.firebase.auth.FirebaseAuth;
 import java.util.Map;
 
 public class HistoricalOrdersFragment extends Fragment {
 
     private FragmentHistoricalOrdersBinding binding;
+    private HistoricalOrdersViewModel historicalOrdersViewModel;
 
+    @Override
     public View onCreateView(@NonNull LayoutInflater inflater,
                              ViewGroup container, Bundle savedInstanceState) {
 
-        // 獲取 ViewModel
-        HistoricalOrdersViewModel historicalOrdersViewModel;
+        // 初始化 ViewModel
         historicalOrdersViewModel = new ViewModelProvider(this).get(HistoricalOrdersViewModel.class);
 
-        // 綁定視圖
+        // 綁定佈局
         binding = FragmentHistoricalOrdersBinding.inflate(inflater, container, false);
         View root = binding.getRoot();
 
@@ -41,58 +41,53 @@ public class HistoricalOrdersFragment extends Fragment {
         completedOrdersListView.setAdapter(completedOrdersAdapter);
         rejectedOrdersListView.setAdapter(rejectedOrdersAdapter);
 
-        // 觀察 LiveData，當數據變化時更新 ListView
+        // 1. 根據 UID 靜態設置餐廳名稱
+        String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
+        String restaurantName;
+
+        // 2. 使用 UID 判斷對應的餐廳名稱
+        if ("hhDjGejvu3bGzaoBAe7ymIGJjqP2".equals(uid)) {
+            restaurantName = "美琪晨餐館";  // UID 對應美琪晨餐館
+        } else if ("XlIoYWkELHR8gytiJYx7EF6rNHr2".equals(uid)) {
+            restaurantName = "戀茶屋";  // UID 對應戀茶屋
+        } else if("sPoPsuMvvafICGhTtFzfkwlYHkQ2".equals(uid)) {
+            restaurantName = "MINI小晨堡";  // UID 對應戀茶屋
+        }
+        else {
+            restaurantName = "未知餐廳";  // 如果 UID 不匹配，設置為未知
+        }
+
+        // 3. 直接設置餐廳名稱到 ViewModel 中
+        historicalOrdersViewModel.setRestaurantName(restaurantName);
+
+        // 觀察 ViewModel 中的完成訂單列表，並在數據變化時更新 ListView
         historicalOrdersViewModel.getCompletedOrdersList().observe(getViewLifecycleOwner(), completedOrders -> {
             completedOrdersAdapter.clear();
             for (Map.Entry<String, String> entry : completedOrders.entrySet()) {
                 String orderKey = entry.getKey();
-                // 只顯示訂單編號的後六位與名字
                 String displayText = orderKey.substring(orderKey.length() - 6) + " - " + entry.getValue();
                 completedOrdersAdapter.add(displayText);
             }
             completedOrdersAdapter.notifyDataSetChanged();
         });
 
+        // 觀察 ViewModel 中的拒絕訂單列表，並在數據變化時更新 ListView
         historicalOrdersViewModel.getRejectedOrdersList().observe(getViewLifecycleOwner(), rejectedOrders -> {
             rejectedOrdersAdapter.clear();
             for (Map.Entry<String, String> entry : rejectedOrders.entrySet()) {
                 String orderKey = entry.getKey();
-                // 只顯示訂單編號的後六位與名字
                 String displayText = orderKey.substring(orderKey.length() - 6) + " - " + entry.getValue();
                 rejectedOrdersAdapter.add(displayText);
             }
             rejectedOrdersAdapter.notifyDataSetChanged();
         });
 
-        // 為 ListView 設置點擊事件監聽器，顯示訂單詳細資訊
-        completedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
-            String displayText = completedOrdersAdapter.getItem(position);
-            String orderKey = displayText.split(" - ")[0]; // 提取訂單ID的後六位
-            String orderDetails = historicalOrdersViewModel.getCompletedOrdersDetails(orderKey); // 獲取詳細資訊
-            showOrderDetailsDialog(orderDetails);
-        });
-
-        rejectedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
-            String displayText = rejectedOrdersAdapter.getItem(position);
-            String orderKey = displayText.split(" - ")[0]; // 提取訂單ID的後六位
-            String orderDetails = historicalOrdersViewModel.getRejectedOrdersDetails(orderKey); // 獲取詳細資訊
-            showOrderDetailsDialog(orderDetails);
-        });
-
         return root;
-    }
-
-    private void showOrderDetailsDialog(String orderDetails) {
-        new AlertDialog.Builder(getContext())
-                .setTitle("訂單詳情")
-                .setMessage(orderDetails)
-                .setPositiveButton("確定", null)
-                .show();
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
-        binding = null;  // 當視圖銷毀時清除 binding
+        binding = null;
     }
 }
