@@ -39,6 +39,7 @@
                     android:id="@+id/editTextChinese"
                     android:layout_width="278dp"
                     android:layout_height="wrap_content"
+                    android:inputType="text"
                     android:hint="品項" />
 
             </LinearLayout>

@@ -20,6 +20,7 @@ import com.example.restaurantlogging.R;
 import com.example.restaurantlogging.databinding.FragmentExcelBinding;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
@@ -40,7 +41,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
+import com.github.mikephil.charting.formatter.ValueFormatter;
 public class ExcelFragment extends Fragment {
 
     private FragmentExcelBinding binding;
@@ -331,6 +332,9 @@ public class ExcelFragment extends Fragment {
 
         Calendar calendar = (Calendar) startOfWeek.clone();  // 從一週的開始日（周日）開始
 
+        // 定義一週的每一天的標籤
+        final String[] weekDays = {"星期日", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六"};
+
         // 迭代該周的每一天（從周日到周六）
         for (int i = 0; i < 7; i++) {
             String dateStr = new SimpleDateFormat("yyyy/MM/dd", Locale.getDefault()).format(calendar.getTime());
@@ -343,9 +347,26 @@ public class ExcelFragment extends Fragment {
         dataSet.setColors(getResources().getColor(R.color.bar1), getResources().getColor(R.color.bar2),
                 getResources().getColor(R.color.bar3), getResources().getColor(R.color.bar4));
         BarData data = new BarData(dataSet);
+
+        // 設置 X 軸標籤格式
+        barChart.getXAxis().setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                int indexVal = (int) value; // 明確轉換 float 為 int
+                if (indexVal >= 0 && indexVal < weekDays.length) {
+                    return weekDays[indexVal];
+                }
+                return "";
+            }
+        });
+
+        barChart.getXAxis().setGranularity(1f); // 確保標籤間隔為 1
+        barChart.getXAxis().setPosition(XAxis.XAxisPosition.BOTTOM); // 將 X 軸顯示在底部
+
         barChart.setData(data);
         barChart.invalidate(); // 刷新圖表
     }
+
 
     // 計算一週結束日期
     private Calendar getEndOfWeek() {

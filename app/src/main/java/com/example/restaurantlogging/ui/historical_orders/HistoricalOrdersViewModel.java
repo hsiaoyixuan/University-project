@@ -30,10 +30,10 @@ public class HistoricalOrdersViewModel extends ViewModel {
         rejectedOrdersDetails = new HashMap<>();
     }
 
-    // 1. 設置餐廳名稱並觸發 Firebase 訂單數據的過濾
+    // 設置餐廳名稱並觸發 Firebase 訂單數據的過濾
     public void setRestaurantName(String restaurantName) {
         this.restaurantName = restaurantName;
-        fetchOrdersFromFirebase(); // 調用方法來獲取並過濾訂單
+        fetchOrdersFromFirebase();
     }
 
     private void fetchOrdersFromFirebase() {
@@ -43,22 +43,22 @@ public class HistoricalOrdersViewModel extends ViewModel {
                 Map<String, String> completedOrders = new HashMap<>();
                 Map<String, String> rejectedOrders = new HashMap<>();
 
-                // 2. 獲取今天的日期，將時間部分設為 0，獲得當天的開始時間戳
+                // 獲取今天的日期，將時間部分設為 0，獲得當天的開始時間戳
                 Calendar calendar = Calendar.getInstance();
                 calendar.set(Calendar.HOUR_OF_DAY, 0);
                 calendar.set(Calendar.MINUTE, 0);
                 calendar.set(Calendar.SECOND, 0);
                 calendar.set(Calendar.MILLISECOND, 0);
-                long startOfDayTimestamp = calendar.getTimeInMillis(); // 當天開始的時間戳
+                long startOfDayTimestamp = calendar.getTimeInMillis();
 
                 for (DataSnapshot orderSnapshot : dataSnapshot.getChildren()) {
-                    // 3. 獲取每筆訂單的餐廳名稱與時間戳
+                    // 獲取每筆訂單的餐廳名稱與時間戳
                     String orderRestaurantName = orderSnapshot.child("restaurantName").getValue(String.class);
                     Long timestamp = orderSnapshot.child("timestamp").getValue(Long.class);
 
-                    // 4. 檢查餐廳名稱是否匹配且訂單時間是否為當天
+                    // 檢查餐廳名稱是否匹配且訂單時間是否為當天
                     if (!orderRestaurantName.equals(restaurantName) || timestamp < startOfDayTimestamp) {
-                        continue;  // 餐廳名稱不匹配或訂單時間不是當天，則跳過該訂單
+                        continue;
                     }
 
                     // 符合條件的訂單：獲取訂購人信息與訂單狀態
@@ -67,7 +67,7 @@ public class HistoricalOrdersViewModel extends ViewModel {
                     String rejectedReason = orderSnapshot.child("拒絕原因").getValue(String.class);
                     List<Map<String, Object>> itemList = (List<Map<String, Object>>) orderSnapshot.child("items").getValue();
 
-                    // 5. 構建訂單項目的詳細字符串
+                    // 構建訂單項目的詳細字符串
                     StringBuilder itemsStringBuilder = new StringBuilder();
                     if (itemList != null) {
                         for (Map<String, Object> item : itemList) {
@@ -78,9 +78,9 @@ public class HistoricalOrdersViewModel extends ViewModel {
                         }
                     }
 
-                    String orderId = orderSnapshot.getKey().substring(orderSnapshot.getKey().length() - 6); // 訂單ID的後六位
+                    String orderId = orderSnapshot.getKey().substring(orderSnapshot.getKey().length() - 6);
 
-                    // 6. 根據訂單狀態（完成或拒絕）將訂單加入相應的列表
+                    // 根據訂單狀態（完成或拒絕）將訂單加入相應的列表
                     if ("完成訂單".equals(status)) {
                         String orderSummary = "訂購人: " + name;
                         String orderDetails = "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + itemsStringBuilder.toString();
@@ -88,13 +88,13 @@ public class HistoricalOrdersViewModel extends ViewModel {
                         completedOrdersDetails.put(orderId, orderDetails);
                     } else if ("拒絕訂單".equals(status)) {
                         String orderSummary = "訂購人: " + name;
-                        String orderDetails = "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) + ", 拒絕原因: " + rejectedReason + itemsStringBuilder.toString();
+                        String orderDetails = "訂購人: " + name + ", 訂購時間: " + convertTimestampToReadableDate(timestamp) +"\n"+ "拒絕原因: " + rejectedReason + itemsStringBuilder.toString();
                         rejectedOrders.put(orderId, orderSummary);
                         rejectedOrdersDetails.put(orderId, orderDetails);
                     }
                 }
 
-                // 7. 更新 LiveData，以便 UI 能即時顯示更新後的訂單
+                // 更新 LiveData，以便 UI 能即時顯示更新後的訂單
                 mCompletedOrdersList.setValue(completedOrders);
                 mRejectedOrdersList.setValue(rejectedOrders);
             }
@@ -126,7 +126,7 @@ public class HistoricalOrdersViewModel extends ViewModel {
         return rejectedOrdersDetails.get(orderId);
     }
 
-    // 8. 將時間戳轉換為可讀日期格式
+    // 將時間戳轉換為可讀日期格式
     private String convertTimestampToReadableDate(Long timestamp) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
         return sdf.format(new Date(timestamp));

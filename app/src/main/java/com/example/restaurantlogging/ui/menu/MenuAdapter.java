@@ -96,45 +96,37 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
                 }
             });
 
-            // 添加 ListView 的點擊事件處理
+            // 在点击“新增”时，添加额外的 Intent 标志，指示这是“新增”操作
             itemDescriptionListView.setOnItemClickListener((parent, view, position, id) -> {
-                // 獲取當前菜單項的描述行
                 int adapterPosition = getAdapterPosition();
                 if (adapterPosition != RecyclerView.NO_POSITION) {
                     MenuItem currentItem = menuItems.get(adapterPosition);
-                    List<String> descriptions = new ArrayList<>(currentItem.getDescriptions());
-
-                    if (position == descriptions.size()) { // 點擊 "新增" 項
-                        Intent intent = new Intent(context, EditMenuItemActivity.class);
-                        intent.putExtra("itemName", currentItem.getName());
-                        intent.putExtra("menuPath", uidToMenuPathMap.get(mAuth.getCurrentUser().getUid()));
-                        context.startActivity(intent);
-                    } else { // 點擊其他描述項
-                        String selectedDescription = currentItem.getDescriptions().get(position);
-                        String selectedDetail = currentItem.getItemDetails().get(position);
-
-                        Intent intent = new Intent(context, EditMenuItemActivity.class);
-                        intent.putExtra("itemName", currentItem.getName());
-                        intent.putExtra("itemDescription", selectedDescription);
-                        intent.putExtra("itemDetail", selectedDetail);
-                        intent.putExtra("menuPath", uidToMenuPathMap.get(mAuth.getCurrentUser().getUid()));
-                        context.startActivity(intent);
+                    if (position >= 0 && position < currentItem.getDescriptions().size()) {
+                        // 點擊現有描述項
+                        startEditMenuItemActivity(currentItem, false, position);
+                    } else if (position == currentItem.getDescriptions().size()) {
+                        // 點擊 "新增" 項
+                        startEditMenuItemActivity(currentItem, true, position);
                     }
                 }
             });
         }
 
         public void bind(MenuItem item) {
+            // 控制描述列表顯示或隱藏
             if (item.isDescriptionVisible()) {
                 itemDescriptionListView.setVisibility(View.VISIBLE);
             } else {
                 itemDescriptionListView.setVisibility(View.GONE);
             }
 
+            // 設置菜單項目名稱
             itemNameTextView.setText(item.getName());
 
+            // 構建描述列表並添加 "新增" 項
             List<String> descriptions = new ArrayList<>(item.getDescriptions());
             descriptions.add("新增"); // 在末尾添加“新增”項
+
 
             ArrayAdapter<String> adapter = new ArrayAdapter<>(context, R.layout.description_item, descriptions);
             itemDescriptionListView.setAdapter(adapter);
@@ -158,6 +150,30 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
             params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
             listView.setLayoutParams(params);
             listView.requestLayout();
+        }
+
+        private void startEditMenuItemActivity(MenuItem item, boolean isNew, int position) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser == null) {
+                // 若未登入，顯示提示或進行其他處理
+                return;
+            }
+
+            Intent intent = new Intent(context, EditMenuItemActivity.class);
+            intent.putExtra("itemName", item.getName());
+            intent.putExtra("menuPath", uidToMenuPathMap.get(currentUser.getUid()));
+
+            if (isNew) {
+                intent.putExtra("isNew", true); // 添加標志以指示是“新增”
+            } else {
+                String selectedDescription = item.getDescriptions().get(position);
+                String selectedDetail = item.getItemDetails().get(position);
+                intent.putExtra("itemDescription", selectedDescription);
+                intent.putExtra("itemDetail", selectedDetail);
+                intent.putExtra("isNew", false); // 添加標志以指示不是“新增”
+            }
+
+            context.startActivity(intent);
         }
     }
 }

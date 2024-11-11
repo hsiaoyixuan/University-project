@@ -97,46 +97,65 @@ public class MenuFragment extends Fragment {
         menuListener = new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                // 確保 Activity 仍在運行，避免因 Activity 銷毀而導致錯誤
                 if (getActivity() == null || getActivity().isFinishing() || getActivity().isDestroyed()) {
-                    // 如果活動已經停止或銷毀，不再更新UI
-                    return;
+                    return; // 防止在Activity銷毀時更新UI
                 }
 
-                Log.d(TAG, "DataSnapshot received: " + dataSnapshot.toString()); // 添加日誌以調試數據
+                Log.d(TAG, "DataSnapshot received: " + dataSnapshot.toString()); // 日誌以調試數據
 
-                // 清空舊的數據
+                // 清空舊的數據，準備載入新的菜單資料
                 menuItemList.clear();
 
-                // 遍歷數據表中的每個子節點
+                // 遍歷資料庫中的每個子節點
                 for (DataSnapshot itemSnapshot : dataSnapshot.getChildren()) {
+                    // 取得品項名稱，直接使用，不做格式限制
                     String itemName = itemSnapshot.getKey();
-                    List<String> itemDescriptions = new ArrayList<>(); // 用于存储多个描述
-                    List<String> itemDetails = new ArrayList<>(); // 用于存储多个详细信息
-                    boolean isClosed = false; // 默认为未关闭
-                    for (DataSnapshot detailSnapshot : itemSnapshot.getChildren()) {
-                        String key = detailSnapshot.getKey();
-                        String value = detailSnapshot.getValue().toString();
-                        itemDetails.add(key + ": " + value); // 存储完整的详细信息
 
-                        if (key.equals("closed")) {
-                            isClosed = Boolean.parseBoolean(value);// 获取closed状态
-                        } else if (value.contains("價格=")) {
-                            try {
-                                String number = value.split("價格=")[1].split(",")[0].replaceAll("[^0-9.]", "");
-                                itemDescriptions.add(key + ": " + number);
-                            } catch (ArrayIndexOutOfBoundsException e) {
-                                Log.e(TAG, "Error parsing price from value: " + value, e);
+                    // 確保 itemName 不為空
+                    if (itemName != null) {
+                        // 初始化描述和詳細信息的列表
+                        List<String> itemDescriptions = new ArrayList<>();
+                        List<String> itemDetails = new ArrayList<>();
+                        boolean isClosed = false; // 默認為未關閉
+
+                        // 遍歷每個品項的詳細信息
+                        for (DataSnapshot detailSnapshot : itemSnapshot.getChildren()) {
+                            String key = detailSnapshot.getKey();
+                            String value = detailSnapshot.getValue().toString();
+
+                            // 將詳細信息以 "鍵: 值" 格式加入列表
+                            itemDetails.add(key + ": " + value);
+
+                            // 檢查是否有 'closed' 鍵來判斷品項是否關閉
+                            if (key.equals("closed")) {
+                                isClosed = Boolean.parseBoolean(value); // 轉換為布爾值
+                            }
+                            // 檢查值中是否包含 '價格='，提取價格並添加到描述列表中
+                            else if (value.contains("價格=")) {
+                                try {
+                                    // 使用正則表達式和分割提取價格值
+                                    String number = value.split("價格=")[1].split(",")[0].replaceAll("[^0-9.]", "");
+                                    itemDescriptions.add(key + ": " + number); // 將價格添加到描述列表中
+                                } catch (ArrayIndexOutOfBoundsException e) {
+                                    // 當分割數組超出邊界時捕獲異常
+                                    Log.e(TAG, "Error parsing price from value: " + value, e);
+                                }
                             }
                         }
+
+                        // 調試用的日誌，顯示每個品項的名稱、描述和詳細信息
+                        Log.d(TAG, "Item: " + itemName + ", Descriptions: " + itemDescriptions.toString() + ", Details: " + itemDetails.toString());
+
+                        // 將新建的 MenuItem 對象添加到列表中
+                        menuItemList.add(new MenuItem(itemName, itemDescriptions, itemDetails, isClosed));
                     }
-
-                    Log.d(TAG, "Item: " + itemName + ", Descriptions: " + itemDescriptions.toString() + ", Details: " + itemDetails.toString());
-
-                    menuItemList.add(new MenuItem(itemName, itemDescriptions, itemDetails, isClosed));
                 }
 
+                // 通知 RecyclerView 的適配器更新UI
                 menuAdapter.notifyDataSetChanged();
             }
+
 
             @Override
             public void onCancelled(@NonNull DatabaseError databaseError) {

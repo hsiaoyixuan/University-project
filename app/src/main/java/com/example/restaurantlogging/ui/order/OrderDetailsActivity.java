@@ -43,6 +43,12 @@ public class OrderDetailsActivity extends AppCompatActivity {
         // 從 Intent 獲取傳遞過來的訂單數據
         Map<String, Object> order = (Map<String, Object>) getIntent().getSerializableExtra("order");
 
+        String status = order.containsKey("接單狀況") ? (String) order.get("接單狀況") : "";
+        // 這樣可以確保只有在訂單狀態為 "接受訂單" 時，才會顯示 "完成訂單" 按鈕
+        if (!"接受訂單".equals(status)) {
+            btOrderFin.setVisibility(View.GONE);
+        }
+
         // 獲取訂單中的 timestamp（取餐時間）
         long pickupTimestamp = (long) order.get("timestamp");
 

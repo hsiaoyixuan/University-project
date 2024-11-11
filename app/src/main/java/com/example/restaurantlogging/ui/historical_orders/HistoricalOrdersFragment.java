@@ -1,5 +1,6 @@
 package com.example.restaurantlogging.ui.historical_orders;
 
+import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -7,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 import com.example.restaurantlogging.databinding.FragmentHistoricalOrdersBinding;
@@ -41,26 +43,12 @@ public class HistoricalOrdersFragment extends Fragment {
         completedOrdersListView.setAdapter(completedOrdersAdapter);
         rejectedOrdersListView.setAdapter(rejectedOrdersAdapter);
 
-        // 1. 根據 UID 靜態設置餐廳名稱
+        // 根據 UID 靜態設置餐廳名稱
         String uid = FirebaseAuth.getInstance().getCurrentUser().getUid();
-        String restaurantName;
-
-        // 2. 使用 UID 判斷對應的餐廳名稱
-        if ("hhDjGejvu3bGzaoBAe7ymIGJjqP2".equals(uid)) {
-            restaurantName = "美琪晨餐館";  // UID 對應美琪晨餐館
-        } else if ("XlIoYWkELHR8gytiJYx7EF6rNHr2".equals(uid)) {
-            restaurantName = "戀茶屋";  // UID 對應戀茶屋
-        } else if("sPoPsuMvvafICGhTtFzfkwlYHkQ2".equals(uid)) {
-            restaurantName = "MINI小晨堡";  // UID 對應戀茶屋
-        }
-        else {
-            restaurantName = "未知餐廳";  // 如果 UID 不匹配，設置為未知
-        }
-
-        // 3. 直接設置餐廳名稱到 ViewModel 中
+        String restaurantName = getRestaurantNameByUid(uid);
         historicalOrdersViewModel.setRestaurantName(restaurantName);
 
-        // 觀察 ViewModel 中的完成訂單列表，並在數據變化時更新 ListView
+        // 觀察完成訂單列表的數據變化
         historicalOrdersViewModel.getCompletedOrdersList().observe(getViewLifecycleOwner(), completedOrders -> {
             completedOrdersAdapter.clear();
             for (Map.Entry<String, String> entry : completedOrders.entrySet()) {
@@ -71,7 +59,7 @@ public class HistoricalOrdersFragment extends Fragment {
             completedOrdersAdapter.notifyDataSetChanged();
         });
 
-        // 觀察 ViewModel 中的拒絕訂單列表，並在數據變化時更新 ListView
+        // 觀察拒絕訂單列表的數據變化
         historicalOrdersViewModel.getRejectedOrdersList().observe(getViewLifecycleOwner(), rejectedOrders -> {
             rejectedOrdersAdapter.clear();
             for (Map.Entry<String, String> entry : rejectedOrders.entrySet()) {
@@ -82,7 +70,41 @@ public class HistoricalOrdersFragment extends Fragment {
             rejectedOrdersAdapter.notifyDataSetChanged();
         });
 
+        // 設置完成訂單 ListView 項目點擊事件
+        completedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
+            String orderId = completedOrdersAdapter.getItem(position).split(" - ")[0];
+            showOrderDetailsDialog(getContext(), historicalOrdersViewModel.getCompletedOrdersDetails(orderId));
+        });
+
+        // 設置拒絕訂單 ListView 項目點擊事件
+        rejectedOrdersListView.setOnItemClickListener((parent, view, position, id) -> {
+            String orderId = rejectedOrdersAdapter.getItem(position).split(" - ")[0];
+            showOrderDetailsDialog(getContext(), historicalOrdersViewModel.getRejectedOrdersDetails(orderId));
+        });
+
         return root;
+    }
+
+    // 根據 UID 返回餐廳名稱
+    private String getRestaurantNameByUid(String uid) {
+        if ("hhDjGejvu3bGzaoBAe7ymIGJjqP2".equals(uid)) {
+            return "美琪晨餐館";
+        } else if ("XlIoYWkELHR8gytiJYx7EF6rNHr2".equals(uid)) {
+            return "戀茶屋";
+        } else if ("sPoPsuMvvafICGhTtFzfkwlYHkQ2".equals(uid)) {
+            return "MINI小晨堡";
+        } else {
+            return "未知餐廳";
+        }
+    }
+
+    // 顯示訂單詳細資訊的 AlertDialog
+    private void showOrderDetailsDialog(Context context, String orderDetails) {
+        new AlertDialog.Builder(context)
+                .setTitle("訂單詳細資訊")
+                .setMessage(orderDetails)
+                .setPositiveButton("確定", (dialog, which) -> dialog.dismiss())
+                .show();
     }
 
     @Override
