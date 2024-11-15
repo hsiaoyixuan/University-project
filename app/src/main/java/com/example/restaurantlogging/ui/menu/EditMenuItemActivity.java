@@ -79,15 +79,8 @@ public class EditMenuItemActivity extends AppCompatActivity {
         if (menuPath != null) {
             menuRef = FirebaseDatabase.getInstance().getReference(menuPath);
         }
-        // 顯示提示用戶的 AlertDialog
-        new AlertDialog.Builder(this)
-                .setTitle("提示")
-                .setMessage("請注意!!修改內容不可修改名稱")
-                .setPositiveButton("確認", (dialog, which) -> {
-                    // 點擊「確認」後的操作，這裡不需要執行任何操作，只是關閉對話框
-                })
-                .setCancelable(false) // 防止用戶按返回鍵關閉對話框
-                .show();
+
+
 
         // 初始化UI组件
         nameTextView = findViewById(R.id.textViewName);
@@ -128,6 +121,19 @@ public class EditMenuItemActivity extends AppCompatActivity {
 
         // 获取 Intent 传递的标志
         boolean isNew = getIntent().getBooleanExtra("isNew", false);
+
+        // **僅在非新增模式下顯示警告框**
+        if (!isNew) {
+            // 顯示提示用戶的 AlertDialog
+            new AlertDialog.Builder(this)
+                    .setTitle("提示")
+                    .setMessage("請注意!!修改內容不可修改名稱")
+                    .setPositiveButton("確認", (dialog, which) -> {
+                        // 點擊「確認」後的操作，這裡不需要執行任何操作，只是關閉對話框
+                    })
+                    .setCancelable(false) // 防止用戶按返回鍵關閉對話框
+                    .show();
+        }
         if (isNew) {
             addButton.setVisibility(View.VISIBLE);
             updateButton.setVisibility(View.GONE);

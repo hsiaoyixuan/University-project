@@ -169,7 +169,8 @@ public class OrderDetailsActivity extends AppCompatActivity {
             int selectedMinutes = selectedTens * 10 + selectedUnits;
 
             // 更新 Firebase 的取餐時間和本地顯示，將選擇的分鐘數加到原有的取餐時間上
-            long updatedTimestamp = originalTimestamp + selectedMinutes * 60 * 1000; // 在原始取餐時間基礎上加上選中的分鐘數
+            long updatedTimestamp = selectedMinutes * 60 * 1000; // 在原始取餐時間基礎上加上選中的分鐘數
+            //long updatedTimestamp = originalTimestamp + selectedMinutes * 60 * 1000;
             order.put("timestamp", updatedTimestamp);
             DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
             orderRef.child("timestamp").setValue(updatedTimestamp).addOnCompleteListener(task -> {

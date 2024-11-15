@@ -84,17 +84,15 @@ public class home extends AppCompatActivity {
         switch (uid) {
             case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
                 restaurantname.setText("美琪晨餐館");
-                //restaurantname.setText("餐廳一號");
                 if (isWeekend) {
                     opentime.setText("假日營業時間 10:00~14:00");
                 } else {
                     opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
                 }
-                restaurantName = "美琪晨餐館";  // 返回餐廳名稱
+                restaurantName = "美琪晨餐館";
                 break;
             case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
                 restaurantname.setText("戀茶屋");
-                //restaurantname.setText("餐廳二號");
                 if (isWeekend) {
                     opentime.setText("假日營業時間 10:00~14:00");
                 } else {
@@ -110,6 +108,24 @@ public class home extends AppCompatActivity {
                     opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
                 }
                 restaurantName = "MINI小晨堡";  // 返回餐廳名稱
+                break;
+            case "pUIVdsTMPNOcoWPSFh1Z9WL1Mfu2":
+                restaurantname.setText("紅鈕扣");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "紅鈕扣";  // 返回餐廳名稱
+                break;
+            case "qT0C0R1VhhblSSOy5Wj2ZgxNeju2":
+                restaurantname.setText("阿布早午餐");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "阿布早午餐";  // 返回餐廳名稱
                 break;
             default:
                 restaurantname.setText("未知餐廳");

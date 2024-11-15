@@ -37,6 +37,14 @@ public class ExcelViewModel extends ViewModel {
                     displayName.setValue("MINI小晨堡");
                     restaurantName = "MINI小晨堡";
                     break;
+                case "pUIVdsTMPNOcoWPSFh1Z9WL1Mfu2":
+                    displayName.setValue("紅鈕扣");
+                    restaurantName = "紅鈕扣";
+                    break;
+                case "qT0C0R1VhhblSSOy5Wj2ZgxNeju2":
+                    displayName.setValue("紅鈕扣");
+                    restaurantName = "紅鈕扣";
+                    break;
                 default:
                     Log.w("ExcelViewModel", "Unknown UID: " + uid);
                     displayName.setValue("Unknown Restaurant");

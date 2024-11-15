@@ -93,6 +93,10 @@ public class HistoricalOrdersFragment extends Fragment {
             return "戀茶屋";
         } else if ("sPoPsuMvvafICGhTtFzfkwlYHkQ2".equals(uid)) {
             return "MINI小晨堡";
+        } else if ("pUIVdsTMPNOcoWPSFh1Z9WL1Mfu2".equals(uid)) {
+            return "紅鈕扣";
+        } else if ("qT0C0R1VhhblSSOy5Wj2ZgxNeju2".equals(uid)) {
+            return "阿布早午餐";
         } else {
             return "未知餐廳";
         }

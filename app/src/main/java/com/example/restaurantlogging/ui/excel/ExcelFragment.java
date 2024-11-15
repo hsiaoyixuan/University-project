@@ -2,6 +2,7 @@ package com.example.restaurantlogging.ui.excel;
 
 import android.app.DatePickerDialog;
 import android.content.Context;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -79,6 +80,7 @@ public class ExcelFragment extends Fragment {
         // 表格模式按鈕點擊事件
         btnShowTable.setOnClickListener(v -> {
             showTable(tableScrollView, pieChart, barChart);
+            updateButtonStyles(binding.btnShowTable);
         });
 
         // 圓餅圖模式按鈕點擊事件
@@ -86,6 +88,7 @@ public class ExcelFragment extends Fragment {
             showPieChart(tableScrollView, pieChart, barChart);
             // 確保圓餅圖刷新
             fetchOrdersData(binding.tableLayout, selectedDate, excelViewModel.getRestaurantName());
+            updateButtonStyles(binding.btnShowPieChart);
         });
 
         // 長條圖模式按鈕點擊事件
@@ -93,6 +96,7 @@ public class ExcelFragment extends Fragment {
             showBarChart(tableScrollView, pieChart, barChart);
             // 確保長條圖刷新
             fetchWeeklySalesData(excelViewModel.getRestaurantName());
+            updateButtonStyles(binding. btnShowBarChart);
         });
 
         // 設置當前日期並加載數據
@@ -101,6 +105,22 @@ public class ExcelFragment extends Fragment {
 
         return root;
     }
+    private void updateButtonStyles(Button selectedButton) {
+        // 重置所有按鈕的樣式為默認
+        binding.btnShowTable.setTextColor(Color.parseColor("#F2ebd9"));
+        binding.btnShowTable.setBackgroundColor(Color.parseColor("#66363C"));
+
+        binding.btnShowPieChart.setTextColor(Color.parseColor("#F2ebd9"));
+        binding.btnShowPieChart.setBackgroundColor(Color.parseColor("#66363C"));
+
+        binding.btnShowBarChart.setTextColor(Color.parseColor("#F2ebd9"));
+        binding.btnShowBarChart.setBackgroundColor(Color.parseColor("#66363C"));
+
+        // 設置選中按鈕的樣式
+        selectedButton.setTextColor(Color.parseColor("#66363C")); // 崎紅
+        selectedButton.setBackgroundColor(Color.parseColor("#F2ebd9")); // 暖白
+    }
+
 
 
     // 設置今天的日期並設定當週開始日

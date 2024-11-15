@@ -6,8 +6,8 @@
     android:orientation="horizontal">
 
     <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="688dp"
+        android:layout_width="614dp"
+        android:layout_height="760dp"
         android:orientation="vertical"
         android:paddingTop="50dp">
 
@@ -18,8 +18,8 @@
 
         <ListView
             android:id="@+id/fin_order_list"
-            android:layout_width="614dp"
-            android:layout_height="715dp" />
+            android:layout_width="593dp"
+            android:layout_height="650dp" />
     </LinearLayout>
 
     <LinearLayout
