@@ -80,16 +80,23 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         handler.post(new Runnable() {
             @Override
             public void run() {
-                if (differenceInMinutes[0] > 0) {
-                    holder.textViewOrderTime.setText(getFormattedTimeDisplay(differenceInMinutes[0], readableDate1));
-                    differenceInMinutes[0]--; // 每次減去 1 分鐘
+                // 每次重新計算時間差
+                long updatedDifferenceInMinutes = calculateTimeDifferenceFromNow(readableDate1);
+
+                if (updatedDifferenceInMinutes > 0) {
+                    // 更新 UI 顯示
+                    holder.textViewOrderTime.setText(getFormattedTimeDisplay(updatedDifferenceInMinutes, readableDate1));
                 } else {
+                    // 超過取餐時間的情況
                     holder.textViewOrderTime.setText("已超過取餐時間");
                     holder.textViewOrderTime.setTextColor(Color.RED);
                 }
-                handler.postDelayed(this, 60000); // 每分鐘更新一次
+                // 繼續每分鐘更新一次
+                handler.postDelayed(this, 60000);
             }
         });
+
+
 
         // 設定接受和拒絕按鈕的可見性
         if ("pending".equals(filterType) || "delayed".equals(filterType)) {
@@ -123,12 +130,15 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             Date orderDate = sdf.parse(readableDate1); // 將 readableDate1 轉換為 Date
             Date currentDate = new Date(); // 當前時間
             long differenceInMillis = orderDate.getTime() - currentDate.getTime(); // 計算毫秒差值（取餐時間減當前時間）
-            return differenceInMillis / (60 * 1000); // 將毫秒轉換為分鐘
+
+            // 改為浮點計算，並向上取整
+            return (long) Math.ceil(differenceInMillis / (60.0 * 1000));
         } catch (Exception e) {
             e.printStackTrace();
             return 0; // 若解析失敗，返回0
         }
     }
+
 
     // 根據分鐘數決定顯示格式
     private String getFormattedTimeDisplay(long minutes, String readableDate) {

@@ -114,26 +114,29 @@ public class OrderDetailsActivity extends AppCompatActivity {
     private void updatePickupTime(long pickupTimestamp) {
         long currentTime = System.currentTimeMillis();  // 當前時間戳
         long differenceInMillis = pickupTimestamp - currentTime;  // 取餐時間與當前時間的差值（毫秒）
-        long differenceInMinutes = differenceInMillis / (60 * 1000);  // 將差值轉換為分鐘
+
+        // 向上取整，避免少顯示一分鐘
+        long differenceInMinutes = (long) Math.ceil(differenceInMillis / (60.0 * 1000));
 
         if (differenceInMinutes > 0) {
             if (differenceInMinutes >= 1440) {  // 超過1天
                 long days = differenceInMinutes / 1440;
                 long remainingMinutes = differenceInMinutes % 1440;
                 tvOrderTime.setText(String.format("距離取餐時間: %d 天 %02d 小時", days, remainingMinutes / 60));
-            } else if (differenceInMinutes >= 60) {
+            } else if (differenceInMinutes >= 60) {  // 超過1小時
                 long hours = differenceInMinutes / 60;
                 long remainingMinutes = differenceInMinutes % 60;
                 tvOrderTime.setText(String.format("距離取餐時間: %02d 小時 %02d 分鐘", hours, remainingMinutes));
-            } else {
+            } else {  // 少於1小時
                 tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
             }
             tvOrderTime.setTextColor(Color.BLACK);  // 正常顯示為黑色
-        } else {
+        } else {  // 時間已超過
             tvOrderTime.setText("已超過取餐時間");
             tvOrderTime.setTextColor(Color.RED);  // 超時後設為紅色
         }
     }
+
 
     // 顯示編輯時間的對話框
     private void showEditTimeDialog(Map<String, Object> order, int currentMinutes, long originalTimestamp) {
@@ -168,22 +171,25 @@ public class OrderDetailsActivity extends AppCompatActivity {
             int selectedUnits = numberPickerMinutesUnits.getValue();
             int selectedMinutes = selectedTens * 10 + selectedUnits;
 
-            // 更新 Firebase 的取餐時間和本地顯示，將選擇的分鐘數加到原有的取餐時間上
-            long updatedTimestamp = selectedMinutes * 60 * 1000; // 在原始取餐時間基礎上加上選中的分鐘數
-            //long updatedTimestamp = originalTimestamp + selectedMinutes * 60 * 1000;
-            order.put("timestamp", updatedTimestamp);
+            // 計算新取餐時間（以當前時間為基準）
+            long updatedTimestamp = System.currentTimeMillis() + selectedMinutes * 60 * 1000;
+
+            // 更新 Firebase 的取餐時間
             DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
             orderRef.child("timestamp").setValue(updatedTimestamp).addOnCompleteListener(task -> {
                 if (task.isSuccessful()) {
-                    Toast.makeText(OrderDetailsActivity.this, "取餐時間更新成功", Toast.LENGTH_SHORT).show();
-                    startUpdatingTime(updatedTimestamp);  // 更新倒數計時
+                    Toast.makeText(OrderDetailsActivity.this, "取餐時間已更新為 " + selectedMinutes + " 分鐘後", Toast.LENGTH_SHORT).show();
+                    tvOrderTime.setText(String.format("距離取餐時間: %d 分鐘", selectedMinutes)); // 更新倒數顯示
+                    startUpdatingTime(updatedTimestamp);  // 重新啟動倒數計時，使用新時間戳
                 } else {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新失敗", Toast.LENGTH_SHORT).show();
                 }
             });
 
-            alertDialog.dismiss();
+            alertDialog.dismiss();  // 關閉對話框
         });
+
+
 
         alertDialog.show();
     }
