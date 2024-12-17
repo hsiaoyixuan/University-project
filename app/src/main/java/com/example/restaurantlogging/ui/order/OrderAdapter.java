@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
@@ -56,10 +57,9 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.order_item, parent, false);
         return new OrderViewHolder(view);
     }
-
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
-        Map<String, Object> order = filteredOrderList.get(position); // 只顯示篩選後的訂單
+        Map<String, Object> order = filteredOrderList.get(position);
 
         holder.textViewOrderItem.setText((String) order.get("名字"));
         holder.textViewOrderDate.setText((String) order.get("readableDate"));
@@ -69,36 +69,14 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             holder.textViewOrderNum.setText("#" + orderNumber);
         }
 
-        // 取得 readableDate1 並轉換為時間戳
+        // 設置唯一的 Runnable Tag，避免混亂
+        String orderId = (String) order.get("orderId");
+        holder.textViewOrderTime.setTag(orderId); // 綁定訂單 ID 作為唯一標識
+
         String readableDate1 = (String) order.get("readableDate1");
-        final long[] differenceInMinutes = {calculateTimeDifferenceFromNow(readableDate1)}; // 計算時間差，並用陣列保存
+        updateCountdown(holder, readableDate1, orderId);
 
-        // 設置初始的倒數顯示
-        holder.textViewOrderTime.setText(getFormattedTimeDisplay(differenceInMinutes[0], readableDate1));
-
-        // 每分鐘更新一次倒數時間
-        handler.post(new Runnable() {
-            @Override
-            public void run() {
-                // 每次重新計算時間差
-                long updatedDifferenceInMinutes = calculateTimeDifferenceFromNow(readableDate1);
-
-                if (updatedDifferenceInMinutes > 0) {
-                    // 更新 UI 顯示
-                    holder.textViewOrderTime.setText(getFormattedTimeDisplay(updatedDifferenceInMinutes, readableDate1));
-                } else {
-                    // 超過取餐時間的情況
-                    holder.textViewOrderTime.setText("已超過取餐時間");
-                    holder.textViewOrderTime.setTextColor(Color.RED);
-                }
-                // 繼續每分鐘更新一次
-                handler.postDelayed(this, 60000);
-            }
-        });
-
-
-
-        // 設定接受和拒絕按鈕的可見性
+        // 設定按鈕可見性
         if ("pending".equals(filterType) || "delayed".equals(filterType)) {
             holder.buttonAccept.setVisibility(View.VISIBLE);
             holder.buttonReject.setVisibility(View.VISIBLE);
@@ -107,37 +85,75 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
             holder.buttonReject.setVisibility(View.GONE);
         }
 
-        // 訂單點擊事件
         holder.itemView.setOnClickListener(v -> {
             Context context = v.getContext();
             Intent intent = new Intent(context, OrderDetailsActivity.class);
             intent.putExtra("order", (java.io.Serializable) order);
-            intent.putExtra("differenceInMinutes", differenceInMinutes[0]); // 傳遞差值
             context.startActivity(intent);
         });
 
-        // 接受訂單按鈕點擊事件
         holder.buttonAccept.setOnClickListener(v -> onOrderActionListener.onAcceptOrder(order));
 
-        // 拒絕訂單按鈕點擊事件
-        holder.buttonReject.setOnClickListener(v -> showRejectReasonDialog(holder.itemView.getContext(), order)); // 彈出對話框
+        holder.buttonReject.setOnClickListener(v -> showRejectReasonDialog(holder.itemView.getContext(), order));
     }
 
-    // 計算 readableDate1 與當前時間的差值（分鐘）
+    // 為每個訂單設置倒數計時
+    private void updateCountdown(OrderViewHolder holder, String readableDate1, String orderId) {
+        Runnable countdownRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // 確保只有當前訂單的回調生效
+                if (orderId.equals(holder.textViewOrderTime.getTag())) {
+                    long updatedDifferenceInMinutes = calculateTimeDifferenceFromNow(readableDate1);
+
+                    if (updatedDifferenceInMinutes > 0) {
+                        holder.textViewOrderTime.setText(getFormattedTimeDisplay(updatedDifferenceInMinutes, readableDate1));
+                        holder.textViewOrderTime.setTextColor(Color.BLACK);
+                    } else {
+                        holder.textViewOrderTime.setText("已超過取餐時間");
+                        holder.textViewOrderTime.setTextColor(Color.RED);
+                    }
+
+                    // 設置下一次回調
+                    handler.postDelayed(this, 60000);
+                }
+            }
+        };
+
+        // 先移除該 View 的舊回調，再添加新回調
+        handler.removeCallbacks(countdownRunnable);
+        handler.post(countdownRunnable);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull OrderViewHolder holder) {
+        super.onViewRecycled(holder);
+
+        // 根據 Tag 清除特定回調，避免影響其他 ViewHolder
+        String orderId = (String) holder.textViewOrderTime.getTag();
+        if (orderId != null) {
+            handler.removeCallbacksAndMessages(orderId);
+        }
+    }
+
+
+
+    // 計算 readableDate1 與當前時間的差值（分鐘），向上取整
     private long calculateTimeDifferenceFromNow(String readableDate1) {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
         try {
             Date orderDate = sdf.parse(readableDate1); // 將 readableDate1 轉換為 Date
-            Date currentDate = new Date(); // 當前時間
-            long differenceInMillis = orderDate.getTime() - currentDate.getTime(); // 計算毫秒差值（取餐時間減當前時間）
+            long differenceInMillis = orderDate.getTime() - System.currentTimeMillis(); // 計算毫秒差值
 
-            // 改為浮點計算，並向上取整
+            // 改為浮點計算，向上取整，避免少 1 分鐘的問題
             return (long) Math.ceil(differenceInMillis / (60.0 * 1000));
         } catch (Exception e) {
             e.printStackTrace();
             return 0; // 若解析失敗，返回0
         }
     }
+
+
 
 
     // 根據分鐘數決定顯示格式
