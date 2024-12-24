@@ -1,6 +1,9 @@
 package com.example.restaurantlogging.ui.order;
 
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
@@ -20,27 +23,47 @@ import java.util.List;
 import java.util.Map;
 
 public class OrderDetailsActivity extends AppCompatActivity {
+
+    private TextView tvOrderTime;  // 顯示距離取餐時間的 TextView
+    private Handler handler;
+    private long updateInterval = 60000; // 每分鐘更新一次
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_order_details);
 
-        TextView tvorderdetails = findViewById(R.id.tv_order_details);
-        TextView tvprice = findViewById(R.id.tv_order_price);
-        TextView tvOrderTime = findViewById(R.id.tv_order_time);
+        TextView tvOrder = findViewById(R.id.tv_order);
+        TextView tvOrderDetails = findViewById(R.id.tv_order_details);
+        TextView tvPrice = findViewById(R.id.tv_order_price);
+        tvOrderTime = findViewById(R.id.tv_order_time);
         Button btOrderEdit = findViewById(R.id.bt_order_edit);
         Button btOrderFin = findViewById(R.id.bt_order_fin);  // 获取完成订单按钮
 
         // 從 Intent 獲取傳遞過來的訂單數據
         Map<String, Object> order = (Map<String, Object>) getIntent().getSerializableExtra("order");
-        int differenceInMinutes = getIntent().getIntExtra("differenceInMinutes", 0);
 
-        // 顯示轉換後的正數分鐘在 tvOrderTime 中
-        tvOrderTime.setText(String.format("距離取餐時間: %02d分鐘", differenceInMinutes));
+        String status = order.containsKey("接單狀況") ? (String) order.get("接單狀況") : "";
+        // 這樣可以確保只有在訂單狀態為 "接受訂單" 時，才會顯示 "完成訂單" 按鈕
+        if (!"接受訂單".equals(status)) {
+            btOrderFin.setVisibility(View.GONE);
+        }
+
+        // 獲取訂單中的 timestamp（取餐時間）
+        long pickupTimestamp = (long) order.get("timestamp");
+
+        startUpdatingTime(pickupTimestamp);  // 開始倒數計時
 
         // 構建訂單詳細信息的 StringBuilder
         StringBuilder details = new StringBuilder();
-        StringBuilder price = new StringBuilder();
+
+        // 獲取訂單編號
+        String orderNumber = (String) order.get("orderNumber");
+        if (orderNumber != null) {
+            tvOrder.setText("#" + orderNumber + " 訂單明細");
+        } else {
+            tvOrder.setText("訂單明細"); // 如果没有订单编号，使用默认的文本
+        }
 
         // 獲取訂單中的 itemList
         List<Map<String, Object>> itemList = (List<Map<String, Object>>) order.get("items");
@@ -54,11 +77,11 @@ public class OrderDetailsActivity extends AppCompatActivity {
         }
 
         // 將構建的訂單詳細信息設置到 tvOrderDetails
-        tvorderdetails.setText(details.toString());
-        tvprice.setText("總計:" + order.get("totalPrice") + "元");
+        tvOrderDetails.setText(details.toString());
+        tvPrice.setText("總計: " + order.get("totalPrice") + "元");
 
-        // 按鈕點擊事件，顯示編輯時間的對話框
-        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, differenceInMinutes));  // 传递 differenceInMinutes 给 showEditTimeDialog
+        // 編輯取餐時間按鈕
+        btOrderEdit.setOnClickListener(v -> showEditTimeDialog(order, (int) (pickupTimestamp - System.currentTimeMillis()) / (60 * 1000), pickupTimestamp));
 
         // 完成訂單按鈕點擊事件
         btOrderFin.setOnClickListener(v -> {
@@ -75,8 +98,48 @@ public class OrderDetailsActivity extends AppCompatActivity {
         });
     }
 
+    // 開始定時更新取餐時間顯示
+    private void startUpdatingTime(long pickupTimestamp) {
+        updatePickupTime(pickupTimestamp);  // 立即顯示時間
+        handler = new Handler(Looper.getMainLooper());  // 確保在更新時運行在主線程上
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                updatePickupTime(pickupTimestamp);
+                handler.postDelayed(this, updateInterval);  // 每分鐘更新一次
+            }
+        }, updateInterval);
+    }
+
+    private void updatePickupTime(long pickupTimestamp) {
+        long currentTime = System.currentTimeMillis();  // 當前時間戳
+        long differenceInMillis = pickupTimestamp - currentTime;  // 取餐時間與當前時間的差值（毫秒）
+
+        // 向上取整，避免少顯示一分鐘
+        long differenceInMinutes = (long) Math.ceil(differenceInMillis / (60.0 * 1000));
+
+        if (differenceInMinutes > 0) {
+            if (differenceInMinutes >= 1440) {  // 超過1天
+                long days = differenceInMinutes / 1440;
+                long remainingMinutes = differenceInMinutes % 1440;
+                tvOrderTime.setText(String.format("距離取餐時間: %d 天 %02d 小時", days, remainingMinutes / 60));
+            } else if (differenceInMinutes >= 60) {  // 超過1小時
+                long hours = differenceInMinutes / 60;
+                long remainingMinutes = differenceInMinutes % 60;
+                tvOrderTime.setText(String.format("距離取餐時間: %02d 小時 %02d 分鐘", hours, remainingMinutes));
+            } else {  // 少於1小時
+                tvOrderTime.setText(String.format("距離取餐時間: %02d 分鐘", differenceInMinutes));
+            }
+            tvOrderTime.setTextColor(Color.BLACK);  // 正常顯示為黑色
+        } else {  // 時間已超過
+            tvOrderTime.setText("已超過取餐時間");
+            tvOrderTime.setTextColor(Color.RED);  // 超時後設為紅色
+        }
+    }
+
+
     // 顯示編輯時間的對話框
-    private void showEditTimeDialog(Map<String, Object> order, int currentMinutes) {
+    private void showEditTimeDialog(Map<String, Object> order, int currentMinutes, long originalTimestamp) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         LayoutInflater inflater = this.getLayoutInflater();
         View dialogView = inflater.inflate(R.layout.dialog_edit_time, null);
@@ -95,7 +158,6 @@ public class OrderDetailsActivity extends AppCompatActivity {
         numberPickerMinutesUnits.setMaxValue(9);
 
         // 將當前分鐘拆分為十位和個位，並設置到 NumberPicker
-        // 使用 currentMinutes 來設置滾軸初始值，確保顯示與 tv_order_time 相同的數字
         int tens = currentMinutes / 10;
         int units = currentMinutes % 10;
         numberPickerMinutesTens.setValue(tens);
@@ -109,25 +171,34 @@ public class OrderDetailsActivity extends AppCompatActivity {
             int selectedUnits = numberPickerMinutesUnits.getValue();
             int selectedMinutes = selectedTens * 10 + selectedUnits;
 
-            // 更新訂單的取餐時間到 Firebase
-            order.put("取餐時間", selectedMinutes);
-            DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
-            orderRef.child("取餐時間").setValue(selectedMinutes).addOnCompleteListener(task -> {
-                if (task.isSuccessful()) {
-                    Toast.makeText(OrderDetailsActivity.this, "取餐時間更新成功", Toast.LENGTH_SHORT).show();
+            // 計算新取餐時間（以當前時間為基準）
+            long updatedTimestamp = System.currentTimeMillis() + selectedMinutes * 60 * 1000;
 
-                    // 更新 UI 中的取餐時間
-                    TextView tvOrderTime = findViewById(R.id.tv_order_time);
-                    tvOrderTime.setText(String.format("距離取餐時間: %02d分鐘", selectedMinutes));
+            // 更新 Firebase 的取餐時間
+            DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").child((String) order.get("orderId"));
+            orderRef.child("timestamp").setValue(updatedTimestamp).addOnCompleteListener(task -> {
+                if (task.isSuccessful()) {
+                    Toast.makeText(OrderDetailsActivity.this, "取餐時間已更新為 " + selectedMinutes + " 分鐘後", Toast.LENGTH_SHORT).show();
+                    tvOrderTime.setText(String.format("距離取餐時間: %d 分鐘", selectedMinutes)); // 更新倒數顯示
+                    startUpdatingTime(updatedTimestamp);  // 重新啟動倒數計時，使用新時間戳
                 } else {
                     Toast.makeText(OrderDetailsActivity.this, "取餐時間更新失敗", Toast.LENGTH_SHORT).show();
                 }
             });
 
-            alertDialog.dismiss();
+            alertDialog.dismiss();  // 關閉對話框
         });
+
+
 
         alertDialog.show();
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);  // 停止定時任務
+    }
 }
+
+

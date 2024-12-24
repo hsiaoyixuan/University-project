@@ -5,6 +5,14 @@
 
     <group android:checkableBehavior="single">
         <item
+            android:id="@+id/nav_menu"
+            android:icon="@drawable/ic_baseline_assignment_24"
+            android:title="@string/menu_menu" />
+        <item
+            android:id="@+id/nav_order"
+            android:icon="@drawable/baseline_fastfood_24"
+            android:title="@string/menu_order" />
+        <item
             android:id="@+id/nav_historicalorders"
             android:icon="@drawable/ic_baseline_filter_vintage_24"
             android:title="@string/menu_historicalorders" />
@@ -12,18 +20,6 @@
             android:id="@+id/nav_excel"
             android:icon="@drawable/ic_baseline_attach_money_24"
             android:title="@string/menu_excel" />
-        <item
-            android:id="@+id/nav_menu"
-            android:icon="@drawable/ic_baseline_assignment_24"
-            android:title="@string/menu_menu" />
-        <item
-            android:id="@+id/nav_service"
-            android:icon="@drawable/ic_baseline_chat_24"
-            android:title="@string/menu_service" />
-        <item
-            android:id="@+id/nav_order"
-            android:icon="@drawable/baseline_fastfood_24"
-            android:title="@string/menu_order" />
         <item
             android:id="@+id/nav_logout"
             android:icon="@drawable/ic_baseline_logout_24"

@@ -2,12 +2,13 @@ package com.example.restaurantlogging.ui.order;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -15,24 +16,39 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.example.restaurantlogging.R;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHolder> {
 
-    private List<Map<String, Object>> orderList;
+    private List<Map<String, Object>> allOrdersList; // 原始訂單列表
+    private List<Map<String, Object>> filteredOrderList; // 篩選後的訂單列表
     private OnOrderActionListener onOrderActionListener;
-    private String filterType; // 用于标识当前显示的订单类型
+    private String filterType;
+    private Handler handler = new Handler(); // Handler 用於定時更新倒數計時
+    private DatabaseReference ordersRef; // Firebase Database 參考
 
+    // 構造函數，初始化訂單列表、篩選條件和 Firebase 參考
     public OrderAdapter(List<Map<String, Object>> orderList, OnOrderActionListener onOrderActionListener, String filterType) {
-        this.orderList = orderList;
+        this.allOrdersList = orderList;
+        this.filteredOrderList = new ArrayList<>();
         this.onOrderActionListener = onOrderActionListener;
-        this.filterType = filterType; // 保存过滤类型
+        this.filterType = filterType;
+
+        // 初始化 Firebase 參考，指向 Orders 節點
+        ordersRef = FirebaseDatabase.getInstance().getReference("Orders");
+
+        filterOrders(); // 初始化篩選結果
     }
 
     @NonNull
@@ -41,93 +57,147 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.order_item, parent, false);
         return new OrderViewHolder(view);
     }
-
     @Override
     public void onBindViewHolder(@NonNull OrderViewHolder holder, int position) {
-        Map<String, Object> order = orderList.get(position);
+        Map<String, Object> order = filteredOrderList.get(position);
 
-        // 根據 filterType 過濾訂單並決定是否顯示
-        if (shouldDisplayOrder(order)) {
-            holder.itemView.setVisibility(View.VISIBLE); // 顯示符合條件的訂單項
-            holder.textViewOrderItem.setText((String) order.get("名字"));
-            holder.textViewOrderDate.setText((String) order.get("readableDate"));
+        holder.textViewOrderItem.setText((String) order.get("名字"));
+        holder.textViewOrderDate.setText((String) order.get("readableDate"));
 
-            String orderNumber = (String) order.get("orderNumber"); // 獲取訂單號碼
-            if (orderNumber != null) {
-                holder.textViewOrderNum.setText("#" + orderNumber); // 顯示訂單編號
-            }
+        String orderNumber = (String) order.get("orderNumber");
+        if (orderNumber != null) {
+            holder.textViewOrderNum.setText("#" + orderNumber);
+        }
 
-            Long differenceInMinutes = (Long) order.get("differenceInMinutes");
-            int minutes = differenceInMinutes != null ? Math.abs(differenceInMinutes.intValue()) : 0;
+        // 設置唯一的 Runnable Tag，避免混亂
+        String orderId = (String) order.get("orderId");
+        holder.textViewOrderTime.setTag(orderId); // 綁定訂單 ID 作為唯一標識
 
-            holder.textViewOrderTime.setText("距離取餐時間: " + minutes + "分鐘\n" + (String) order.get("readableDate1"));
+        String readableDate1 = (String) order.get("readableDate1");
+        updateCountdown(holder, readableDate1, orderId);
 
-            // 設置接受和拒絕按鈕的可見性
-            if ("pending".equals(filterType) || "delayed".equals(filterType)) {
-                holder.buttonAccept.setVisibility(View.VISIBLE);
-                holder.buttonReject.setVisibility(View.VISIBLE);
-            } else {
-                holder.buttonAccept.setVisibility(View.GONE);
-                holder.buttonReject.setVisibility(View.GONE);
-            }
-
-            holder.itemView.setOnClickListener(v -> {
-                Context context = v.getContext();
-                Intent intent = new Intent(context, OrderDetailsActivity.class);
-                intent.putExtra("order", (java.io.Serializable) order);
-                intent.putExtra("differenceInMinutes", minutes);
-                context.startActivity(intent);
-            });
-
-            holder.buttonAccept.setOnClickListener(v -> onOrderActionListener.onAcceptOrder(order));
-
-            holder.buttonReject.setOnClickListener(v -> {
-                Context context = v.getContext();
-                AlertDialog.Builder builder = new AlertDialog.Builder(context);
-                LayoutInflater inflater = LayoutInflater.from(context);
-                View dialogView = inflater.inflate(R.layout.dialog_reject_order, null);
-                builder.setView(dialogView);
-
-                AlertDialog alertDialog = builder.create();
-
-                RadioGroup radioGroup = dialogView.findViewById(R.id.radio_group_reject_reason);
-                EditText editTextOtherReason = dialogView.findViewById(R.id.edit_text_other_reason);
-                Button buttonConfirm = dialogView.findViewById(R.id.button_confirm);
-                Button buttonCancel = dialogView.findViewById(R.id.button_cancel);
-
-                buttonConfirm.setOnClickListener(view -> {
-                    int selectedId = radioGroup.getCheckedRadioButtonId();
-                    String reason;
-                    if (selectedId != -1) {
-                        RadioButton selectedRadioButton = dialogView.findViewById(selectedId);
-                        reason = selectedRadioButton.getText().toString();
-                    } else {
-                        reason = editTextOtherReason.getText().toString();
-                    }
-
-                    if (reason.isEmpty()) {
-                        Toast.makeText(context, "請輸入拒絕原因", Toast.LENGTH_SHORT).show();
-                    } else {
-                        onOrderActionListener.onRejectOrder(order, reason);
-                        alertDialog.dismiss();
-                    }
-                });
-
-                buttonCancel.setOnClickListener(view -> alertDialog.dismiss());
-                alertDialog.show();
-            });
+        // 設定按鈕可見性
+        if ("pending".equals(filterType) || "delayed".equals(filterType)) {
+            holder.buttonAccept.setVisibility(View.VISIBLE);
+            holder.buttonReject.setVisibility(View.VISIBLE);
         } else {
-            holder.itemView.setVisibility(View.GONE); // 隱藏不符合條件的訂單項
+            holder.buttonAccept.setVisibility(View.GONE);
+            holder.buttonReject.setVisibility(View.GONE);
+        }
+
+        holder.itemView.setOnClickListener(v -> {
+            Context context = v.getContext();
+            Intent intent = new Intent(context, OrderDetailsActivity.class);
+            intent.putExtra("order", (java.io.Serializable) order);
+            context.startActivity(intent);
+        });
+
+        holder.buttonAccept.setOnClickListener(v -> onOrderActionListener.onAcceptOrder(order));
+
+        holder.buttonReject.setOnClickListener(v -> showRejectReasonDialog(holder.itemView.getContext(), order));
+    }
+
+    // 為每個訂單設置倒數計時
+    private void updateCountdown(OrderViewHolder holder, String readableDate1, String orderId) {
+        Runnable countdownRunnable = new Runnable() {
+            @Override
+            public void run() {
+                // 確保只有當前訂單的回調生效
+                if (orderId.equals(holder.textViewOrderTime.getTag())) {
+                    long updatedDifferenceInMinutes = calculateTimeDifferenceFromNow(readableDate1);
+
+                    if (updatedDifferenceInMinutes > 0) {
+                        holder.textViewOrderTime.setText(getFormattedTimeDisplay(updatedDifferenceInMinutes, readableDate1));
+                        holder.textViewOrderTime.setTextColor(Color.BLACK);
+                    } else {
+                        holder.textViewOrderTime.setText("已超過取餐時間");
+                        holder.textViewOrderTime.setTextColor(Color.RED);
+                    }
+
+                    // 設置下一次回調
+                    handler.postDelayed(this, 60000);
+                }
+            }
+        };
+
+        // 先移除該 View 的舊回調，再添加新回調
+        handler.removeCallbacks(countdownRunnable);
+        handler.post(countdownRunnable);
+    }
+
+    @Override
+    public void onViewRecycled(@NonNull OrderViewHolder holder) {
+        super.onViewRecycled(holder);
+
+        // 根據 Tag 清除特定回調，避免影響其他 ViewHolder
+        String orderId = (String) holder.textViewOrderTime.getTag();
+        if (orderId != null) {
+            handler.removeCallbacksAndMessages(orderId);
         }
     }
 
-    // 判断订单是否符合当前显示类型
+
+
+    // 計算 readableDate1 與當前時間的差值（分鐘），向上取整
+    private long calculateTimeDifferenceFromNow(String readableDate1) {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy/MM/dd HH:mm", Locale.getDefault());
+        try {
+            Date orderDate = sdf.parse(readableDate1); // 將 readableDate1 轉換為 Date
+            long differenceInMillis = orderDate.getTime() - System.currentTimeMillis(); // 計算毫秒差值
+
+            // 改為浮點計算，向上取整，避免少 1 分鐘的問題
+            return (long) Math.ceil(differenceInMillis / (60.0 * 1000));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return 0; // 若解析失敗，返回0
+        }
+    }
+
+
+
+
+    // 根據分鐘數決定顯示格式
+    private String getFormattedTimeDisplay(long minutes, String readableDate) {
+        if (minutes >= 1440) {  // 超過1天，顯示天數
+            int days = (int) (minutes / 1440);
+            return String.format("距離取餐時間: %d 天\n取餐日期: %s", days, readableDate);
+        } else if (minutes >= 60) {  // 超過1小時，顯示小時
+            int hours = (int) (minutes / 60);
+            int remainingMinutes = (int) (minutes % 60);
+            return String.format("距離取餐時間: %d 小時 %02d 分鐘\n取餐日期: %s", hours, remainingMinutes, readableDate);
+        } else {  // 60分鐘以下，顯示分鐘
+            return String.format("距離取餐時間: %02d 分鐘\n取餐日期: %s", minutes, readableDate);
+        }
+    }
+
+    // 更新篩選條件
+    public void updateFilter(String newFilterType) {
+        this.filterType = newFilterType;
+        filterOrders(); // 篩選訂單
+        notifyDataSetChanged(); // 通知適配器刷新數據
+    }
+
+    // 更新訂單列表
+    public void updateOrderList(List<Map<String, Object>> newOrderList) {
+        this.allOrdersList = newOrderList; // 更新原始訂單列表
+        filterOrders(); // 根據篩選條件重新篩選
+        notifyDataSetChanged(); // 通知適配器刷新數據
+    }
+
+    private void filterOrders() {
+        filteredOrderList.clear(); // 清空舊的篩選列表
+        for (Map<String, Object> order : allOrdersList) {
+            if (shouldDisplayOrder(order)) {
+                filteredOrderList.add(order); // 添加符合條件的訂單
+            }
+        }
+    }
+
     private boolean shouldDisplayOrder(Map<String, Object> order) {
         String status = (String) order.get("接單狀況");
         Long differenceInMinutes = (Long) order.get("differenceInMinutes");
         int minutes = differenceInMinutes != null ? Math.abs(differenceInMinutes.intValue()) : 0;
 
-        // 根据时间和接单状态来分类
         if ("accepted".equals(filterType)) {
             return "接受訂單".equals(status);
         } else if ("delayed".equals(filterType)) {
@@ -138,15 +208,59 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.OrderViewHol
         return false;
     }
 
-    // 提供方法动态更新显示的订单类型
-    public void updateFilter(String newFilterType) {
-        this.filterType = newFilterType;
-        notifyDataSetChanged(); // 通知适配器刷新数据
+    private void showRejectReasonDialog(Context context, Map<String, Object> order) {
+        // 創建一個 AlertDialog
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        LayoutInflater inflater = LayoutInflater.from(context);
+        View dialogView = inflater.inflate(R.layout.dialog_reject_order, null);
+        builder.setView(dialogView);
+
+        // 取得對話框內的 UI 元素
+        RadioGroup radioGroup = dialogView.findViewById(R.id.radio_group_reject_reason);
+        EditText editTextOtherReason = dialogView.findViewById(R.id.edit_text_other_reason);
+        Button buttonConfirm = dialogView.findViewById(R.id.button_confirm);
+        Button buttonCancel = dialogView.findViewById(R.id.button_cancel);
+
+        AlertDialog dialog = builder.create();
+
+        // 確定按鈕的點擊事件
+        buttonConfirm.setOnClickListener(v -> {
+            String reason = "";
+            int selectedId = radioGroup.getCheckedRadioButtonId();
+
+            if (selectedId == R.id.radio_closed) {
+                reason = "歇業時間";
+            } else if (selectedId == R.id.radio_insufficient_material) {
+                reason = "材料不足";
+            } else if (!editTextOtherReason.getText().toString().isEmpty()) {
+                reason = editTextOtherReason.getText().toString();
+            }
+
+            if (!reason.isEmpty()) {
+                // 更新 Firebase 中的訂單狀態和拒絕原因
+                ordersRef.child((String) order.get("orderId"))
+                        .child("接單狀況").setValue("拒絕訂單");
+                ordersRef.child((String) order.get("orderId"))
+                        .child("拒絕原因").setValue(reason);
+
+                // 更新 UI
+                onOrderActionListener.onRejectOrder(order, reason);
+
+                dialog.dismiss();
+            } else {
+                Toast.makeText(context, "請選擇或輸入拒絕理由", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        // 取消按鈕點擊事件
+        buttonCancel.setOnClickListener(v -> dialog.dismiss());
+
+        dialog.show();
     }
 
     @Override
     public int getItemCount() {
-        return orderList.size();
+        return filteredOrderList.size();
     }
 
     static class OrderViewHolder extends RecyclerView.ViewHolder {

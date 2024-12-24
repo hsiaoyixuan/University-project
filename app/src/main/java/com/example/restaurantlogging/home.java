@@ -20,6 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.restaurantlogging.databinding.ActivityHomeBinding;
 
+import java.util.Calendar;
+
 public class home extends AppCompatActivity {
 
     private AppBarConfiguration mAppBarConfiguration;
@@ -47,7 +49,7 @@ public class home extends AppCompatActivity {
         NavigationView navigationView = binding.navView;
 
         mAppBarConfiguration = new AppBarConfiguration.Builder(
-                R.id.nav_historicalorders, R.id.nav_excel, R.id.nav_menu, R.id.nav_service, R.id.nav_order, R.id.nav_logout)
+                R.id.nav_historicalorders, R.id.nav_excel, R.id.nav_menu, R.id.nav_order, R.id.nav_logout)
                 .setOpenableLayout(drawer)
                 .build();
         NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_home);
@@ -55,41 +57,83 @@ public class home extends AppCompatActivity {
         NavigationUI.setupWithNavController(navigationView, navController);
 
         // 初始化 FirebaseAuth
-        mAuth = FirebaseAuth.getInstance();  // 新增：初始化 FirebaseAuth，用於後續獲取用戶 UID
-        String uid = getIntent().getStringExtra("uid");  // 新增：獲取從 MainActivity 傳遞過來的 UID
+        mAuth = FirebaseAuth.getInstance();  // 初始化 FirebaseAuth，用於後續獲取用戶 UID
+        String uid = getIntent().getStringExtra("uid");  // 獲取從 MainActivity 傳遞過來的 UID
 
         // 初始化導航頭部的 TextView，顯示餐廳名稱和營業時間
-        View headerView = navigationView.getHeaderView(0);  // 新增：獲取導航頭部視圖
-        restaurantname = headerView.findViewById(R.id.restaurant_name);  // 新增：初始化餐廳名稱的 TextView
-        opentime = headerView.findViewById(R.id.open_time);  // 新增：初始化營業時間的 TextView
+        View headerView = navigationView.getHeaderView(0);
+        restaurantname = headerView.findViewById(R.id.restaurant_name);
+        opentime = headerView.findViewById(R.id.open_time);
 
         // 根據 UID 設置不同的餐廳名稱和營業時間
-        setRestaurantInfo(uid);  // 新增：調用方法來根據 UID 設置餐廳信息
+        String restaurantName = setRestaurantInfo(uid);  // 設置餐廳信息並返回餐廳名稱
 
-
+        // 修改：傳遞餐廳名稱給 OrderFragment
+        Bundle bundle = new Bundle();
+        bundle.putString("restaurantName", restaurantName);  // 將餐廳名稱存入 Bundle
+        navController.navigate(R.id.nav_order, bundle);  // 導航到 OrderFragment，並傳遞 Bundle
     }
 
-    // 新增此方法：根據 UID 設置不同的餐廳名稱和營業時間
-    private void setRestaurantInfo(String uid) {
+    private String setRestaurantInfo(String uid) {
+        String restaurantName;
+        Calendar calendar = Calendar.getInstance();
+        int dayOfWeek = calendar.get(Calendar.DAY_OF_WEEK);
+
+        boolean isWeekend = (dayOfWeek == Calendar.SATURDAY || dayOfWeek == Calendar.SUNDAY);
+
         switch (uid) {
-            case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":  // 修改：為每個 UID 設定不同的餐廳名稱和營業時間
-                restaurantname.setText("美琪晨餐廳");
-                opentime.setText("營業時間: 08:00 - 22:00");
+            case "hhDjGejvu3bGzaoBAe7ymIGJjqP2":
+                restaurantname.setText("美琪晨餐館");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "美琪晨餐館";
                 break;
             case "XlIoYWkELHR8gytiJYx7EF6rNHr2":
                 restaurantname.setText("戀茶屋");
-                opentime.setText("營業時間: 09:00 - 21:00");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "戀茶屋";  // 返回餐廳名稱
                 break;
-            case "UID3":
-                restaurantname.setText("餐廳名稱 C");
-                opentime.setText("營業時間: 10:00 - 20:00");
+            case "sPoPsuMvvafICGhTtFzfkwlYHkQ2":
+                restaurantname.setText("MINI小晨堡");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "MINI小晨堡";  // 返回餐廳名稱
                 break;
-            // 可以根據需要添加更多用戶的設定
-            default:  // 修改：處理未知 UID 的情況，顯示默認的“未知”信息
+            case "pUIVdsTMPNOcoWPSFh1Z9WL1Mfu2":
+                restaurantname.setText("紅鈕扣");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "紅鈕扣";  // 返回餐廳名稱
+                break;
+            case "qT0C0R1VhhblSSOy5Wj2ZgxNeju2":
+                restaurantname.setText("阿布早午餐");
+                if (isWeekend) {
+                    opentime.setText("假日營業時間 10:00~14:00");
+                } else {
+                    opentime.setText("平日營業時間 6:30~10:50 & 16:00~19:00");
+                }
+                restaurantName = "阿布早午餐";  // 返回餐廳名稱
+                break;
+            default:
                 restaurantname.setText("未知餐廳");
                 opentime.setText("未知營業時間");
+                restaurantName = "未知餐廳";  // 返回默認餐廳名稱
                 break;
         }
+        return restaurantName;  // 返回對應的餐廳名稱
     }
 
     @Override
@@ -105,11 +149,9 @@ public class home extends AppCompatActivity {
                 || super.onSupportNavigateUp();
     }
 
-    // 新增：用於處理用戶登出並返回登錄頁面的邏輯
     public void surelogout(View V) {
         Intent intent = new Intent(home.this, MainActivity.class);
         startActivity(intent);
         finish();
     }
-
 }

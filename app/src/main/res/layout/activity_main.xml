@@ -5,18 +5,19 @@
     android:id="@+id/photo"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00000000"
+    android:background="@color/暖白"
     tools:context=".MainActivity">
 
     <TextView
         android:id="@+id/textView4"
-        android:layout_width="230dp"
-        android:layout_height="94dp"
+        android:layout_width="318dp"
+        android:layout_height="96dp"
         android:layout_marginStart="84dp"
         android:layout_marginTop="4dp"
-        android:text="NPTU"
+        android:text="預約未來-智慧點餐系統(店家端)"
         android:textAlignment="center"
-        android:textSize="50sp"
+        android:textColor="@color/沉紅"
+        android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView"
@@ -30,85 +31,111 @@
         android:layout_marginTop="96dp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/p1" />
+        app:srcCompat="@drawable/cutlery" /> <!-- 請確保 @drawable/cutlery 存在 -->
 
-    <TextView
-        android:id="@+id/open_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="176dp"
+    <!-- CardView -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardView"
+        android:layout_width="622dp"
+        android:layout_height="504dp"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="130dp"
         android:layout_marginEnd="16dp"
-        android:text="餐廳帳號:"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toStartOf="@+id/email"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <CheckBox
-        android:id="@+id/checkBox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="364dp"
-        android:layout_marginEnd="96dp"
-        android:text="記住我"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toStartOf="@+id/login"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <EditText
-        android:id="@+id/password"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:layout_marginEnd="350dp"
-        android:ems="10"
-        android:hint="請輸入密碼"
-        android:inputType="textPassword"
+        android:background="@drawable/cardviewbackground"
+        android:elevation="6dp"
+        android:textAlignment="center"
+        app:cardBackgroundColor="#FBF7EC"
+        app:cardCornerRadius="12dp"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/email" />
+        app:layout_constraintStart_toEndOf="@+id/imageView"
+        app:layout_constraintTop_toTopOf="parent">
 
-    <EditText
-        android:id="@+id/email"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="164dp"
-        android:layout_marginEnd="350dp"
-        android:ems="10"
-        android:hint="請輸入帳號"
-        android:inputType="text"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <!-- 使用LinearLayout將輸入框和按鈕垂直排列 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp">
 
-    <Button
-        android:id="@+id/login"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="116dp"
-        android:layout_marginBottom="228dp"
-        android:text="登入"
-        android:textSize="24sp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+            <!-- 餐廳帳號 TextView 左對齊 -->
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#FBF7EC"
+                android:text="帳號登入"
+                android:textAlignment="center"
+                android:textColor="@color/崎紅"
+                android:textSize="20sp" />
 
-    <TextView
-        android:id="@+id/psw"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="16dp"
-        android:text="密碼:"
-        android:textSize="20sp"
-        app:layout_constraintEnd_toStartOf="@+id/password"
-        app:layout_constraintTop_toBottomOf="@+id/open_time" />
+            <TextView
+                android:id="@+id/open_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="餐廳帳號:"
+                android:layout_marginTop="10dp"
+                android:textSize="18sp" />
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="300dp"
-        android:layout_marginEnd="612dp"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:visibility="visible" />
+            <!-- 帳號 EditText 居中 -->
+            <EditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:hint="請輸入帳號"
+                android:inputType="textEmailAddress" />
+
+            <!-- 密碼 TextView 左對齊 -->
+            <TextView
+                android:id="@+id/psw"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="密碼:"
+                android:textSize="18sp" />
+
+            <!-- 密碼 EditText 居中 -->
+            <EditText
+                android:id="@+id/password"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:hint="請輸入密碼"
+                android:inputType="textPassword" />
+
+            <!-- 記住我 CheckBox 左對齊 -->
+            <CheckBox
+                android:id="@+id/checkBox"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="記住我"
+                android:textSize="18sp" />
+
+            <!-- 登入按鈕居中 -->
+            <Button
+                android:id="@+id/login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:gravity="center"
+                android:text="登入"
+                android:textSize="20sp" />
+
+            <ProgressBar
+                android:id="@+id/progressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:visibility="gone"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/cardView" />
+
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

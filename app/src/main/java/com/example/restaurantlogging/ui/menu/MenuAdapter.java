@@ -13,24 +13,47 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.restaurantlogging.R;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder> {
     private List<MenuItem> menuItems;
     private Context context;
 
-    // 构造函数，用于传递菜单项数据
-    public MenuAdapter(Context context,List<MenuItem> menuItems) {
-        this.context= context;// 确保正确传递context
+    // FirebaseAuth 用於獲取當前登入用戶
+    private FirebaseAuth mAuth;
+
+    // 使用 Map 保存 UID 和菜單路徑的映射
+    private Map<String, String> uidToMenuPathMap;
+
+    // 構造函數，傳遞菜單項目和上下文
+    public MenuAdapter(Context context, List<MenuItem> menuItems) {
+        this.context = context;
         this.menuItems = menuItems;
+        mAuth = FirebaseAuth.getInstance();  // 初始化 FirebaseAuth
+        initializeUidToMenuPathMap(); // 初始化 UID 和菜單路徑的對應
+    }
+
+    // 初始化 UID 對應的路徑
+    private void initializeUidToMenuPathMap() {
+        uidToMenuPathMap = new HashMap<>();
+        uidToMenuPathMap.put("hhDjGejvu3bGzaoBAe7ymIGJjqP2", "校區/屏商校區/美琪晨餐館/食物");
+        uidToMenuPathMap.put("pUIVdsTMPNOcoWPSFh1Z9WL1Mfu2", "校區/屏商校區/紅鈕扣/食物");
+        uidToMenuPathMap.put("XlIoYWkELHR8gytiJYx7EF6rNHr2", "校區/屏師校區/戀茶屋/食物");
+        uidToMenuPathMap.put("sPoPsuMvvafICGhTtFzfkwlYHkQ2", "校區/民生校區/MINI小晨堡/食物");
+        uidToMenuPathMap.put("qT0C0R1VhhblSSOy5Wj2ZgxNeju2", "校區/民生校區/阿布早午餐/食物");
+        // 可以在此处继续添加更多UID与路径的映射
     }
 
     @NonNull
     @Override
     public MenuViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // 使用LayoutInflater加载item布局
+        // 使用 LayoutInflater 加載 item 布局
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.menu_item, parent, false);
         return new MenuViewHolder(view);
@@ -38,14 +61,14 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull MenuViewHolder holder, int position) {
-        // 绑定数据到ViewHolder
+        // 綁定數據到 ViewHolder
         MenuItem item = menuItems.get(position);
         holder.bind(item);
     }
 
     @Override
     public int getItemCount() {
-        // 返回菜单项的数量
+        // 返回菜單項目的數量
         return menuItems.size();
     }
 
@@ -55,63 +78,63 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
 
         public MenuViewHolder(@NonNull View itemView) {
             super(itemView);
-            // 初始化itemView中的TextView
+            // 初始化 itemView 中的 TextView
             itemNameTextView = itemView.findViewById(R.id.itemName);
             itemDescriptionListView = itemView.findViewById(R.id.itemDescriptionListView);
-            // 新增的部分：設置itemNameTextView的點擊事件監聽器
+
+            // 為 itemNameTextView 設置點擊事件監聽器
             itemNameTextView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    // 取得當前菜單項
+                    // 取得當前菜單項目
                     int position = getAdapterPosition();
                     if (position != RecyclerView.NO_POSITION) {
                         MenuItem item = menuItems.get(position);
-                        // 切換descriptionVisible變量
+                        // 切換 descriptionVisible 變量
                         item.setDescriptionVisible(!item.isDescriptionVisible());
                         // 通知適配器指定位置的數據已更改
                         notifyItemChanged(position);
                     }
                 }
             });
-            // 添加 ListView 的点击事件处理
+
+            // 在点击“新增”时，添加额外的 Intent 标志，指示这是“新增”操作
             itemDescriptionListView.setOnItemClickListener((parent, view, position, id) -> {
-                // 获取当前菜单项的描述行
                 int adapterPosition = getAdapterPosition();
                 if (adapterPosition != RecyclerView.NO_POSITION) {
                     MenuItem currentItem = menuItems.get(adapterPosition);
-                    String selectedDescription = currentItem.getDescriptions().get(position);
-                    String selectedDetail = currentItem.getItemDetails().get(position);
-                    // 启动 EditMenuItemActivity 并传递详细信息
-                    Intent intent = new Intent(context, EditMenuItemActivity.class);
-                    intent.putExtra("itemName", currentItem.getName());
-                    intent.putExtra("itemDescription", selectedDescription);
-                    intent.putExtra("itemDetail", selectedDetail); // 传递itemDetail
-                    context.startActivity(intent);
+                    if (position >= 0 && position < currentItem.getDescriptions().size()) {
+                        // 點擊現有描述項
+                        startEditMenuItemActivity(currentItem, false, position);
+                    } else if (position == currentItem.getDescriptions().size()) {
+                        // 點擊 "新增" 項
+                        startEditMenuItemActivity(currentItem, true, position);
+                    }
                 }
             });
         }
 
         public void bind(MenuItem item) {
-            // 根据描述是否可见设置描述的可见性
+            // 控制描述列表顯示或隱藏
             if (item.isDescriptionVisible()) {
-                itemDescriptionListView.setVisibility(View.VISIBLE); // 如果描述可见，则设置描述可见
+                itemDescriptionListView.setVisibility(View.VISIBLE);
             } else {
-                itemDescriptionListView.setVisibility(View.GONE); // 如果描述不可见，则隐藏描述
+                itemDescriptionListView.setVisibility(View.GONE);
             }
-            // 绑定数据到TextView
+
+            // 設置菜單項目名稱
             itemNameTextView.setText(item.getName());
 
-            // 使用描述列表填充ListView
-            List<String> descriptions = item.getDescriptions();
+            // 構建描述列表並添加 "新增" 項
+            List<String> descriptions = new ArrayList<>(item.getDescriptions());
+            descriptions.add("新增"); // 在末尾添加“新增”項
 
-            // 使用ArrayAdapter将描述列表添加到ListView
+
             ArrayAdapter<String> adapter = new ArrayAdapter<>(context, R.layout.description_item, descriptions);
             itemDescriptionListView.setAdapter(adapter);
-            // 动态设置 ListView 高度，以适应内容
             setListViewHeightBasedOnItems(itemDescriptionListView);
         }
 
-        // 动态设置 ListView 高度的方法
         private void setListViewHeightBasedOnItems(ListView listView) {
             ArrayAdapter adapter = (ArrayAdapter) listView.getAdapter();
             if (adapter == null) {
@@ -129,6 +152,30 @@ public class MenuAdapter extends RecyclerView.Adapter<MenuAdapter.MenuViewHolder
             params.height = totalHeight + (listView.getDividerHeight() * (adapter.getCount() - 1));
             listView.setLayoutParams(params);
             listView.requestLayout();
+        }
+
+        private void startEditMenuItemActivity(MenuItem item, boolean isNew, int position) {
+            FirebaseUser currentUser = mAuth.getCurrentUser();
+            if (currentUser == null) {
+                // 若未登入，顯示提示或進行其他處理
+                return;
+            }
+
+            Intent intent = new Intent(context, EditMenuItemActivity.class);
+            intent.putExtra("itemName", item.getName());
+            intent.putExtra("menuPath", uidToMenuPathMap.get(currentUser.getUid()));
+
+            if (isNew) {
+                intent.putExtra("isNew", true); // 添加標志以指示是“新增”
+            } else {
+                String selectedDescription = item.getDescriptions().get(position);
+                String selectedDetail = item.getItemDetails().get(position);
+                intent.putExtra("itemDescription", selectedDescription);
+                intent.putExtra("itemDetail", selectedDetail);
+                intent.putExtra("isNew", false); // 添加標志以指示不是“新增”
+            }
+
+            context.startActivity(intent);
         }
     }
 }

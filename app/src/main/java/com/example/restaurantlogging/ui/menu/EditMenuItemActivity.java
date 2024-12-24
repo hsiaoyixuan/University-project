@@ -1,5 +1,7 @@
 package com.example.restaurantlogging.ui.menu;
 
+import static android.content.ContentValues.TAG;
+
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
@@ -71,7 +74,13 @@ public class EditMenuItemActivity extends AppCompatActivity {
 
         // 初始化Firebase Storage引用
         storageReference = FirebaseStorage.getInstance().getReference();
-        menuRef = FirebaseDatabase.getInstance().getReference("校區/屏商校區/美琪晨餐館/食物");
+        // 從Intent傳遞過來的數據中獲取菜單路徑
+        String menuPath = getIntent().getStringExtra("menuPath");
+        if (menuPath != null) {
+            menuRef = FirebaseDatabase.getInstance().getReference(menuPath);
+        }
+
+
 
         // 初始化UI组件
         nameTextView = findViewById(R.id.textViewName);
@@ -88,10 +97,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
         imageView = findViewById(R.id.firebaseimage);
         Button changeImageButton = findViewById(R.id.change_btn);
         closeSwitch = findViewById(R.id.switch1);
-        p_rice = findViewById(R.id.p_rice);
-        p_noodles = findViewById(R.id.p_noodles);
-        p_cheese = findViewById(R.id.p_cheese);
-        p_shacha = findViewById(R.id.p_shacha);
 
         // 从SharedPreferences读取Switch状态，默认值为false
         SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
@@ -100,7 +105,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
 
         // 设置Switch监听器以保存状态到SharedPreferences
         closeSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            // 保存Switch状态到SharedPreferences
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("switch_state", isChecked);
             editor.apply();
@@ -115,24 +119,43 @@ public class EditMenuItemActivity extends AppCompatActivity {
             }
         });
 
-        // 加载CheckBox状态
-        loadCheckBoxStates();
+        // 获取 Intent 传递的标志
+        boolean isNew = getIntent().getBooleanExtra("isNew", false);
+
+        // **僅在非新增模式下顯示警告框**
+        if (!isNew) {
+            // 顯示提示用戶的 AlertDialog
+            new AlertDialog.Builder(this)
+                    .setTitle("提示")
+                    .setMessage("請注意!!修改內容不可修改名稱")
+                    .setPositiveButton("確認", (dialog, which) -> {
+                        // 點擊「確認」後的操作，這裡不需要執行任何操作，只是關閉對話框
+                    })
+                    .setCancelable(false) // 防止用戶按返回鍵關閉對話框
+                    .show();
+        }
+        if (isNew) {
+            addButton.setVisibility(View.VISIBLE);
+            updateButton.setVisibility(View.GONE);
+        } else {
+            addButton.setVisibility(View.GONE);
+            updateButton.setVisibility(View.VISIBLE);
+        }
 
         // 获取从Intent传递过来的数据
         itemName = getIntent().getStringExtra("itemName");
         itemDescription = getIntent().getStringExtra("itemDescription");
         itemDetail = getIntent().getStringExtra("itemDetail");
+        if (itemName != null) {
+            chineseEditText.setText(itemName);
+        }
 
-        // 将数据设置到UI组件中
         if (itemName != null) nameTextView.setText(itemName);
-
         if (itemDescription != null) {
-            // 提取描述中的中文和其他信息
-            String chineseText = itemDescription.replaceAll("[^\\u4e00-\\u9fa5]", "");
+            String chineseText = itemDescription.contains(":") ? itemDescription.split(":")[0] : itemDescription;
             chineseEditText.setText(chineseText);
-            String numberText = itemDetail.split("價格=")[1].split(",")[0].replaceAll("[^0-9.]", ""); // 提取数字部分
-            numberText = numberText.replaceAll(",.*", "");
-            numberEditText.setText(numberText); // 设置数字到第二个 EditText
+            String numberText = itemDetail.split("價格=")[1].split(",")[0].replaceAll("[^0-9.]", "");
+            numberEditText.setText(numberText);
             calEditText.setText(extractDetail(itemDetail, "熱量"));
             proteinEditText.setText(extractDetail(itemDetail, "蛋白質"));
             sugarEditText.setText(extractDetail(itemDetail, "糖"));
@@ -140,12 +163,10 @@ public class EditMenuItemActivity extends AppCompatActivity {
             fatEditText.setText(extractDetail(itemDetail, "脂肪"));
         }
 
-        // 从Firebase加载照片并显示
         if (itemName != null) {
             loadPhotoFromFirebase();
         }
 
-        // 设置按钮点击事件
         addButton.setOnClickListener(v -> {
             pendingAction = "add";
             showConfirmDialog();
@@ -164,14 +185,12 @@ public class EditMenuItemActivity extends AppCompatActivity {
         changeImageButton.setOnClickListener(v -> openFileChooser());
         loadStoredImageUrl();
 
-        // 添加Firebase Database监听器
         menuRef.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 for (DataSnapshot childSnapshot : snapshot.getChildren()) {
                     try {
                         FoodItem item = childSnapshot.getValue(FoodItem.class);
-                        // 在这里可以处理FoodItem对象
                     } catch (DatabaseException e) {
                         Log.e("Firebase", "Error reading FoodItem", e);
                     }
@@ -188,13 +207,12 @@ public class EditMenuItemActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        // 重新讀取 Switch 狀態
         menuRef.child(itemName).child("closed").addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                Boolean isClosed = snapshot.getValue(Boolean.class); // 從Firebase獲取closed狀態
+                Boolean isClosed = snapshot.getValue(Boolean.class);
                 if (isClosed != null) {
-                    closeSwitch.setChecked(isClosed); // 設置Switch狀態
+                    closeSwitch.setChecked(isClosed);
                 }
             }
 
@@ -203,12 +221,8 @@ public class EditMenuItemActivity extends AppCompatActivity {
                 Toast.makeText(EditMenuItemActivity.this, "Failed to load switch state.", Toast.LENGTH_SHORT).show();
             }
         });
-
-        // 加载CheckBox状态
-        loadCheckBoxStates();
     }
 
-    // 从详细信息中提取特定键的值
     private String extractDetail(String itemDetail, String key) {
         return itemDetail.replaceAll(".*" + key + "=", "").replaceAll(",.*", "");
     }
@@ -216,14 +230,11 @@ public class EditMenuItemActivity extends AppCompatActivity {
     private void loadStoredImageUrl() {
         SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
         String imageUrl = sharedPreferences.getString("imageUrl", null);
-
         if (imageUrl != null) {
-            // 使用 Picasso 将图片加载到 ImageView 中
             Picasso.get().load(imageUrl).into(imageView);
         }
     }
 
-    // 打开文件选择器以选择图片
     private void openFileChooser() {
         Intent intent = new Intent();
         intent.setType("image/*");
@@ -236,10 +247,8 @@ public class EditMenuItemActivity extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == PICK_IMAGE_REQUEST && resultCode == Activity.RESULT_OK && data != null && data.getData() != null) {
             Uri imageUri = data.getData();
-            // 使用 Picasso 将选择的图片加载到 ImageView 中
             Picasso.get().load(imageUri).into(imageView);
             imageView.setTag(imageUri);
-            // 存储图片 URI 到 SharedPreferences
             storeImageUri(imageUri);
         }
     }
@@ -251,7 +260,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    // 将图片 URL 存储到 SharedPreferences
     private void storeImageUrl(String imageUrl) {
         SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPreferences.edit();
@@ -259,11 +267,9 @@ public class EditMenuItemActivity extends AppCompatActivity {
         editor.apply();
     }
 
-    // 上传图片到Firebase Storage
     private void uploadImageToFirebase() {
-        Uri imageUri = (Uri) imageView.getTag(); // 获取图片Uri
+        Uri imageUri = (Uri) imageView.getTag();
         if (imageUri == null) {
-            // 如果没有选择图片，直接保存数据
             saveMenuItem();
             return;
         }
@@ -282,9 +288,9 @@ public class EditMenuItemActivity extends AppCompatActivity {
                     .addOnSuccessListener(taskSnapshot -> fileReference.getDownloadUrl().addOnSuccessListener(uri -> {
                         imageUrl = uri.toString();
                         Toast.makeText(EditMenuItemActivity.this, "新增成功!!", Toast.LENGTH_LONG).show();
-                        Picasso.get().load(uri).into(imageView); // 修改：显示新上传的图片
+                        Picasso.get().load(uri).into(imageView);
                         storeImageUrl(imageUrl);
-                        saveMenuItem(); // 上传图片完成后保存数据
+                        saveMenuItem();
                     }))
                     .addOnFailureListener(e -> {
                         Toast.makeText(EditMenuItemActivity.this, e.getMessage(), Toast.LENGTH_LONG).show();
@@ -295,7 +301,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
         }
     }
 
-    // 显示确认对话框
     private void showConfirmDialog() {
         String message;
         switch (pendingAction) {
@@ -318,7 +323,7 @@ public class EditMenuItemActivity extends AppCompatActivity {
                 .setMessage(message)
                 .setPositiveButton(android.R.string.yes, (dialog, which) -> {
                     if ("add".equals(pendingAction) || "update".equals(pendingAction)) {
-                        uploadImageToFirebase(); // 尝试上传图片，如果没有选择图片也能新增或更新
+                        uploadImageToFirebase();
                     } else if ("delete".equals(pendingAction)) {
                         deleteMenuItem();
                     }
@@ -328,7 +333,6 @@ public class EditMenuItemActivity extends AppCompatActivity {
                 .show();
     }
 
-    // 保存或更新菜单项到Firebase
     private void saveMenuItem() {
         String chinese = chineseEditText.getText().toString();
         float price = Float.parseFloat(numberEditText.getText().toString());
@@ -337,96 +341,82 @@ public class EditMenuItemActivity extends AppCompatActivity {
         float sugar = Float.parseFloat(sugarEditText.getText().toString());
         float total_crab = Float.parseFloat(totalCrabEditText.getText().toString());
         float fat = Float.parseFloat(fatEditText.getText().toString());
-        String name = chinese;
-        String desprice = "價格";
-        String descal = "熱量";
-        String desprotein = "蛋白質";
-        String dessugar = "糖";
-        String destoatl_crab = "碳水化合物";
-        String desfat = "脂肪";
-        String photo = "照片";
-        String plus = "加料";
 
-        DatabaseReference itemRef = menuRef.child(itemName).child(name);
-        itemRef.child(desprice).setValue(price);
-        itemRef.child(descal).setValue(cal);
-        itemRef.child(desprotein).setValue(protein);
-        itemRef.child(dessugar).setValue(sugar);
-        itemRef.child(destoatl_crab).setValue(total_crab);
-        itemRef.child(desfat).setValue(fat);
+        DatabaseReference itemRef = menuRef.child(itemName).child(chinese);
+        itemRef.child("價格").setValue(price);
+        itemRef.child("熱量").setValue(cal);
+        itemRef.child("蛋白質").setValue(protein);
+        itemRef.child("糖").setValue(sugar);
+        itemRef.child("碳水化合物").setValue(total_crab);
+        itemRef.child("脂肪").setValue(fat);
 
-        // 确保图片URL被保存
         if (imageUrl != null && !imageUrl.isEmpty()) {
-            itemRef.child(photo).setValue(imageUrl);
+            itemRef.child("照片").setValue(imageUrl);
         }
-
-        // 檢查並儲存勾選的 CheckBox 的文字到 Firebase
-        if (p_rice.isChecked()) {
-            itemRef.child(plus).child("飯").setValue(10); // 儲存"米飯"選項
-        }
-        if (p_noodles.isChecked()) {
-            itemRef.child(plus).child("麵").setValue(10); // 儲存"麵條"選項
-        }
-        if (p_cheese.isChecked()) {
-            itemRef.child(plus).child("起司").setValue(5); // 儲存"起司"選項
-        }
-        if (p_shacha.isChecked()) {
-            itemRef.child(plus).child("沙茶").setValue(0);
-        }
-
-        // 保存CheckBox状态到SharedPreferences
-        saveCheckBoxStates();
 
         Toast.makeText(this, "操作成功", Toast.LENGTH_SHORT).show();
         finish();
     }
 
-    // 删除菜单项
-    private void deleteMenuItem() {
-        String chinese = chineseEditText.getText().toString();
-        String name = chinese;
-        menuRef.child(itemName).child(name).removeValue();
-        Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
-        finish();
-    }
+    public void copyItemName(String oldName, String newName) {
+        DatabaseReference oldRef = menuRef.child(oldName);
+        DatabaseReference newRef = menuRef.child(newName);
 
-    // 从Firebase加载照片并显示在ImageView中
-    private void loadPhotoFromFirebase() {
-        String chinese = chineseEditText.getText().toString();
-        String name = chinese;
-        menuRef.child(itemName).child(name).child("照片").addListenerForSingleValueEvent(new ValueEventListener() {
+        oldRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                imageUrl = snapshot.getValue(String.class); // 获取图片URL
+                if (snapshot.exists()) {
+                    newRef.setValue(snapshot.getValue()).addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(EditMenuItemActivity.this, "品項名稱已複製", Toast.LENGTH_SHORT).show();
+                        } else {
+                            Log.e(TAG, "Failed to copy data to new node");
+                        }
+                    });
+                } else {
+                    Log.e(TAG, "未找到原始項目");
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                Log.e(TAG, "Database error: " + error.getMessage());
+            }
+        });
+    }
+
+    private void deleteMenuItem() {
+        String chinese = chineseEditText.getText().toString();
+        menuRef.child(itemName).child(chinese).removeValue()
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> Toast.makeText(this, "删除失败", Toast.LENGTH_SHORT).show());
+    }
+
+    private void loadPhotoFromFirebase() {
+        String chinese = chineseEditText.getText().toString();
+        menuRef.child(itemName).child(chinese).child("照片").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                imageUrl = snapshot.getValue(String.class);
                 if (imageUrl != null && !imageUrl.isEmpty()) {
-                    Picasso.get().load(imageUrl).into(imageView); // 显示图片
+                    // 如果有圖片URL，顯示圖片
+                    Picasso.get().load(imageUrl).into(imageView);
+                } else {
+                    // 如果沒有圖片URL，顯示預設圖片
+                    imageView.setImageResource(R.drawable.ic_launcher_foreground);
                 }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 Toast.makeText(EditMenuItemActivity.this, "Failed to load image.", Toast.LENGTH_SHORT).show();
+                // 在錯誤情況下，也顯示預設圖片
+                imageView.setImageResource(R.drawable.ic_launcher_foreground);
             }
         });
     }
 
-    // 保存CheckBox状态到SharedPreferences
-    private void saveCheckBoxStates() {
-        SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putBoolean("p_rice", p_rice.isChecked());
-        editor.putBoolean("p_noodles", p_noodles.isChecked());
-        editor.putBoolean("p_cheese", p_cheese.isChecked());
-        editor.putBoolean("p_shacha", p_shacha.isChecked());
-        editor.apply();
-    }
-
-    // 加载CheckBox状态
-    private void loadCheckBoxStates() {
-        SharedPreferences sharedPreferences = getSharedPreferences("MyAppPrefs", MODE_PRIVATE);
-        p_rice.setChecked(sharedPreferences.getBoolean("p_rice", false));
-        p_noodles.setChecked(sharedPreferences.getBoolean("p_noodles", false));
-        p_cheese.setChecked(sharedPreferences.getBoolean("p_cheese", false));
-        p_shacha.setChecked(sharedPreferences.getBoolean("p_shacha", false));
-    }
 }
